@@ -1,0 +1,16 @@
+{
+  "name": "ЛЮКС-7 — Рогалик-Казино",
+  "short_name": "ЛЮКС-7",
+  "description": "Рогалик-казино: 10 этажей, 5 игр, классы, перки, проклятия, магазин, ачивки.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d0b09",
+  "theme_color": "#0d0b09",
+  "lang": "ru",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

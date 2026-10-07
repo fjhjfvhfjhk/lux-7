@@ -6,15 +6,16 @@
 <meta name="theme-color" content="#0d0b09">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="ЛЮКС-7 — рогалик-казино. 10 этажей, 5 игр, перки, проклятия, ачивки, рекорды.">
+<meta name="description" content="ЛЮКС-7 — рогалик-казино. 10 этажей, 5 игр, перки, проклятия, классы, магазин, ачивки, рекорды.">
 <title>ЛЮКС-7 — Рогалик-Казино</title>
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><radialGradient id='g' cx='35%25' cy='28%25'><stop offset='0%25' stop-color='%23ffeaa7'/><stop offset='55%25' stop-color='%23f2c96b'/><stop offset='100%25' stop-color='%23a87520'/></radialGradient></defs><circle cx='20' cy='20' r='19' fill='url(%23g)' stroke='%236b4a12' stroke-width='1.4'/><circle cx='20' cy='20' r='14' fill='none' stroke='%236b4a12' stroke-width='0.9' opacity='.7' stroke-dasharray='2.4 2.4'/><text x='20' y='27' text-anchor='middle' font-size='20' font-weight='900' fill='%233a2606' font-family='Georgia,serif'>7</text></svg>">
 <style>
 /* ============================================================================
-   ЛЮКС-7 — РОГАЛИК-КАЗИНО  ·  v2.1
-   Один файл. Без зависимостей. Mobile-first + десктоп.
-   v2.1: финал при <10 фишек, ачивки, топ-5 рекордов, серии побед,
-         случайные события на лифте, горячие клавиши, low-money UI.
+   ЛЮКС-7 — РОГАЛИК-КАЗИНО · v2.2
+   v2.2: классы персонажа, магазин между этажами, темы этажей,
+         музыка, шаринг забега, PWA-манифест, исправлен баг навигации с
+         экрана смерти, имена в рекордах.
    ============================================================================ */
 :root{
   --bg:#0d0b09; --panel:#17140f; --panel2:#201a12; --panel3:#2a2216;
@@ -26,6 +27,19 @@
   --ease:cubic-bezier(.2,1,.3,1);
   --bounce:cubic-bezier(.34,1.56,.64,1);
 }
+/* Темы этажей — меняются через body[data-theme] */
+body[data-theme="ember"]{
+  --panel:#1a1210; --panel2:#241815; --panel3:#2e1f1a;
+  --line:#3d2820; --line2:#4f3429;
+}
+body[data-theme="frost"]{
+  --panel:#0f1418; --panel2:#151c22; --panel3:#1d262e;
+  --line:#28323b; --line2:#3a4750;
+}
+body[data-theme="royal"]{
+  --panel:#150e1a; --panel2:#1c1424; --panel3:#261a30;
+  --line:#33243d; --line2:#46334f;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;min-height:100%}
 body{
@@ -35,12 +49,14 @@ body{
   overscroll-behavior:none;touch-action:manipulation;
   -webkit-font-smoothing:antialiased;min-height:100dvh;
   position:relative;overflow-x:hidden;
+  transition:background-color .6s var(--ease);
 }
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
     radial-gradient(60% 40% at 20% 0%, rgba(217,164,65,.07), transparent 70%),
     radial-gradient(50% 40% at 100% 100%, rgba(200,80,63,.05), transparent 70%);
+  transition:background .6s var(--ease);
 }
 #stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.6}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:250}
@@ -79,7 +95,7 @@ body::before{
 @keyframes wheelSpin{to{transform:rotate(1440deg)}}
 @keyframes achPop{0%{transform:scale(.6) rotate(-10deg);opacity:0}60%{transform:scale(1.08) rotate(3deg);opacity:1}100%{transform:none;opacity:1}}
 @keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-
+@keyframes classIn{0%{transform:translateY(30px) scale(.94);opacity:0}100%{transform:none;opacity:1}}
 .anim-screen{animation:screenIn .34s var(--ease) both}
 .anim-pop{animation:numPop .42s var(--bounce)}
 .anim-shake{animation:shake .42s}
@@ -87,14 +103,14 @@ body::before{
 
 /* ---------- HEADER ---------- */
 .hdr{
-  display:flex;align-items:center;gap:8px;
-  padding:calc(env(safe-area-inset-top,0px) + 12px) 14px 12px;
+  display:flex;align-items:center;gap:6px;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 12px 12px;
   border-bottom:1px solid var(--line);
   background:rgba(13,11,9,.72);backdrop-filter:blur(12px);
   position:sticky;top:0;z-index:30;
 }
 .hdr-title{
-  flex:1;font-family:Georgia,serif;font-size:17px;letter-spacing:.14em;
+  flex:1;font-family:Georgia,serif;font-size:16px;letter-spacing:.14em;
   color:var(--gold2);text-transform:uppercase;min-width:0;
   background:linear-gradient(90deg,var(--gold2) 0%,var(--gold2) 35%,#fff6d8 50%,var(--gold2) 65%,var(--gold2) 100%);
   background-size:200% auto;
@@ -104,12 +120,13 @@ body::before{
 .hdr-title small{display:block;font-size:9px;letter-spacing:.3em;color:var(--mut);margin-top:2px;-webkit-text-fill-color:var(--mut)}
 .icon-btn{
   width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);
-  background:var(--panel2);color:var(--mut);font-size:16px;
+  background:var(--panel2);color:var(--mut);font-size:15px;
   display:grid;place-items:center;cursor:pointer;flex-shrink:0;
   transition:transform .15s var(--ease), background .15s, color .15s;
 }
 .icon-btn:active{background:var(--panel3);transform:scale(.92)}
 .icon-btn.on{color:var(--gold2);border-color:var(--gold)}
+@media (max-width:420px){ .hdr .badge.curse{display:none} }
 
 /* ---------- CHIP BAR ---------- */
 .chipbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;flex-wrap:wrap}
@@ -138,11 +155,12 @@ body::before{
 .badge.low{border-color:#7a352a;color:#e08a76;animation:dangerPulse 1.2s ease-in-out infinite}
 .badge.fire{border-color:#6b5220;color:var(--gold2);animation:firePulse 1.6s ease-in-out infinite}
 .badge.pulse{animation:pulseBtn 2s ease-in-out infinite}
+.badge.cls{border-color:#5b8dd9;background:#12192a;color:#9bbaf5}
 .badgerow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 
 /* ---------- GENERIC ---------- */
 .pad{padding:0 14px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;transition:border-color .6s,background .6s}
 .card+.card{margin-top:10px}
 .sect{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);margin:18px 0 9px}
 .row{display:flex;gap:10px}
@@ -188,6 +206,7 @@ body::before{
 .betpanel{
   margin:0 14px;padding:12px 14px 11px;
   background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  transition:border-color .6s,background .6s;
 }
 .bet-top{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
 .bet-top .bl{font-size:10px;letter-spacing:.16em;color:var(--mut);text-transform:uppercase}
@@ -247,6 +266,7 @@ body::before{
   min-height:170px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:14px;
   position:relative;overflow:hidden;
+  transition:background .6s, border-color .6s;
 }
 .stage::before{
   content:"";position:absolute;inset:0;
@@ -396,6 +416,50 @@ body::before{
 }
 .pchip:hover{transform:translateY(-1px) scale(1.04)}
 
+/* ---------- CLASSES ---------- */
+.class-card{
+  display:flex;flex-direction:column;gap:10px;align-items:flex-start;
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);border-radius:16px;
+  padding:20px 18px;cursor:pointer;margin-bottom:12px;
+  transition:transform .18s var(--ease), border-color .18s, box-shadow .25s;
+  animation:classIn .45s var(--bounce) backwards;
+  position:relative;overflow:hidden;
+}
+.class-card:nth-child(2){animation-delay:.08s}
+.class-card:nth-child(3){animation-delay:.16s}
+.class-card:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 12px 30px rgba(217,164,65,.15)}
+.class-card:active{transform:scale(.98)}
+.class-card .ci{font-size:38px;line-height:1;transition:transform .3s var(--bounce)}
+.class-card:hover .ci{transform:scale(1.15) rotate(-8deg)}
+.class-card .cn{font-family:Georgia,serif;font-weight:700;font-size:19px;color:var(--gold2);letter-spacing:.04em}
+.class-card .cd{font-size:13px;color:var(--mut);line-height:1.5}
+.class-card .cb{font-size:11px;color:var(--gold2);background:rgba(217,164,65,.1);border:1px solid rgba(217,164,65,.3);padding:5px 10px;border-radius:8px;letter-spacing:.05em}
+
+/* ---------- SHOP ---------- */
+.shop-item{
+  display:flex;gap:12px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:14px;margin-bottom:9px;
+  transition:transform .15s var(--ease), border-color .2s, box-shadow .2s;
+}
+.shop-item:hover{transform:translateY(-1px)}
+.shop-item.bought{border-color:#26503c;background:linear-gradient(160deg,#12241a,#101a14);opacity:.7}
+.shop-item.disabled{opacity:.45}
+.shop-item .si{font-size:30px;flex-shrink:0}
+.shop-item .sn{font-weight:700;font-size:13.5px;margin-bottom:3px;color:var(--txt)}
+.shop-item .sd{font-size:11.5px;color:var(--mut);line-height:1.4}
+.shop-item .sp{
+  margin-left:auto;padding:9px 12px;border-radius:9px;
+  font-size:12px;font-weight:800;letter-spacing:.04em;
+  background:linear-gradient(180deg,#e8bd63,#c9922f);color:#241a06;
+  cursor:pointer;border:none;white-space:nowrap;flex-shrink:0;
+  transition:transform .12s var(--ease);
+}
+.shop-item .sp:active{transform:scale(.95)}
+.shop-item .sp:disabled{background:var(--panel3);color:#5c5142;cursor:not-allowed}
+.shop-item.bought .sp{background:linear-gradient(180deg,#5fc08c,#37865c);color:#04210f}
+
 /* ---------- ACHIEVEMENTS ---------- */
 .ach-item{
   display:flex;gap:12px;align-items:center;
@@ -428,6 +492,7 @@ body::before{
 .rec-row .rtag{font-size:10px;padding:3px 7px;border-radius:6px;background:var(--panel3);color:var(--mut);letter-spacing:.04em}
 .rec-row .rtag.win{background:#12241a;color:#7fd6a8}
 .rec-row .rtag.dead{background:#2a1411;color:#e08a76}
+.rec-name{font-weight:700;color:var(--gold2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---------- TOASTS ---------- */
 #toasts{position:fixed;left:0;right:0;bottom:96px;z-index:200;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 14px}
@@ -461,6 +526,13 @@ body::before{
   background:var(--panel3);border:1px solid var(--line2);border-bottom-width:2px;
   font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--gold2);
 }
+.name-input{
+  width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--line2);
+  background:var(--panel2);color:var(--txt);font-size:15px;
+  font-family:inherit;outline:none;margin-bottom:12px;
+  transition:border-color .2s;
+}
+.name-input:focus{border-color:var(--gold)}
 
 /* ---------- END ---------- */
 .endwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 22px;text-align:center;gap:8px}
@@ -547,6 +619,10 @@ body::before{
   .modal{align-items:center}
   .modal-in{border-radius:22px;border:1px solid var(--line2);padding:28px 28px 24px;max-width:600px;animation:screenIn .3s var(--ease)}
   #toasts{bottom:auto;top:24px;justify-content:center}
+
+  .class-card{padding:26px 24px}
+  .class-card .ci{font-size:48px}
+  .class-card .cn{font-size:22px}
 }
 @media (min-width:1200px){
   #app{max-width:1180px;padding:30px}
@@ -558,13 +634,15 @@ body::before{
   .perk:hover{transform:none;border-color:var(--line)}
   .perk:hover .pi{transform:none}
   .pcard:hover{transform:none}
+  .class-card:hover{transform:none}
+  .class-card:hover .ci{transform:none}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
 }
 </style>
 </head>
-<body>
+<body data-theme="warm">
 <canvas id="stars" aria-hidden="true"></canvas>
 <canvas id="confetti" aria-hidden="true"></canvas>
 <div id="app"></div>
@@ -573,8 +651,8 @@ body::before{
 
 <script>
 /* ============================================================================
-   ЛЮКС-7 — РОГАЛИК-КАЗИНО · v2.1
-   Правила: забег заканчивается при chips < MIN_BET (нельзя сделать ставку).
+   ЛЮКС-7 — РОГАЛИК-КАЗИНО · v2.2
+   Фикс: экран смерти + достижения/рекорды + назад → возврат на экран смерти.
    ============================================================================ */
 
 /* ------------------------------- УТИЛИТЫ -------------------------------- */
@@ -589,8 +667,11 @@ const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (
 const setText = (sel, v) => { const e = $(sel); if (e) e.textContent = v; };
 
 /* ------------------------------- ЗВУК ---------------------------------- */
-let AC = null, soundOn = true;
-try { soundOn = localStorage.getItem('lux7_sound') !== '0'; } catch (e) {}
+let AC = null, soundOn = true, musicOn = false;
+try {
+  soundOn = localStorage.getItem('lux7_sound') !== '0';
+  musicOn = localStorage.getItem('lux7_music') === '1';
+} catch (e) {}
 function ac() {
   if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
   if (AC && AC.state === 'suspended') { try { AC.resume(); } catch (e) {} }
@@ -628,6 +709,55 @@ function toggleSound() {
   $$('#sndbtn').forEach(b => { b.textContent = soundOn ? '🔊' : '🔇'; b.classList.toggle('on', soundOn); });
 }
 
+/* ------------------------------ МУЗЫКА ---------------------------------- */
+let musicNodes = null;
+function startMusic() {
+  const c = ac(); if (!c || musicNodes) return;
+  try {
+    const master = c.createGain();
+    master.gain.value = 0;
+    master.connect(c.destination);
+    master.gain.linearRampToValueAtTime(0.022, c.currentTime + 2.5);
+    const oscs = [];
+    // Медленный амбиент: 3 синуса, каждый со своим медленным LFO
+    [110, 164.81, 220].forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.value = 0.32;
+      const lfo = c.createOscillator(), lfoGain = c.createGain();
+      lfo.frequency.value = 0.05 + i * 0.02;
+      lfoGain.gain.value = 0.18;
+      lfo.connect(lfoGain); lfoGain.connect(g.gain);
+      lfo.start();
+      o.connect(g); g.connect(master);
+      o.start();
+      oscs.push(o, lfo);
+    });
+    musicNodes = { master, oscs };
+  } catch (e) { musicNodes = null; }
+}
+function stopMusic() {
+  if (!musicNodes) return;
+  const c = ac();
+  try {
+    if (c) musicNodes.master.gain.linearRampToValueAtTime(0, c.currentTime + 0.6);
+    setTimeout(() => {
+      try {
+        musicNodes.oscs.forEach(o => { try { o.stop(); } catch(e){} });
+        musicNodes.master.disconnect();
+      } catch(e){}
+      musicNodes = null;
+    }, 700);
+  } catch (e) { musicNodes = null; }
+}
+function toggleMusic() {
+  musicOn = !musicOn;
+  try { localStorage.setItem('lux7_music', musicOn ? '1' : '0'); } catch (e) {}
+  if (musicOn) { ac(); startMusic(); } else { stopMusic(); }
+  $$('#musbtn').forEach(b => { b.textContent = musicOn ? '🎵' : '🎶'; b.classList.toggle('on', musicOn); });
+}
+
 /* ------------------------------- КОНСТАНТЫ ------------------------------ */
 const MAX_FLOOR = 10;
 const START_CHIPS = 100;
@@ -636,7 +766,8 @@ const BEST_KEY = 'lux7_best_v1';
 const RUN_KEY  = 'lux7_run_v1';
 const ACH_KEY  = 'lux7_ach_v1';
 const REC_KEY  = 'lux7_rec_v1';
-const STREAK_BONUS = 0.15;      // +15% к выплате при серии 3+
+const NAME_KEY = 'lux7_name_v1';
+const STREAK_BONUS = 0.15;
 const STREAK_MIN   = 3;
 
 const PERKS = [
@@ -657,6 +788,26 @@ const CURSES = [
   { id:'cold',  icon:'🧊', name:'Холодная колода',  desc:'Хай-Лоу: ничья сжигает банк' },
   { id:'dry',   icon:'🚱', name:'Сухой закон',      desc:'Перки не работают на этом этаже' },
 ];
+const CLASSES = [
+  { id:'counter', icon:'🎓', name:'Считающий',
+    desc:'Умный игрок. Начинает с перком «Карточный счёт». Блэкджек платит +5%.',
+    perk:'counter',
+    mods:{ bjBonus:0.05 } },
+  { id:'fortune', icon:'🍀', name:'Фортуна',
+    desc:'Родился в рубашке. Начинает с перком «Талисман». Шанс проклятия −25%.',
+    perk:'lucky',
+    mods:{ curseResist:0.25 } },
+  { id:'rush',    icon:'🔥', name:'Рисковый',
+    desc:'Играет по-крупному. Все выплаты ×1.15, но лифт на 20% дороже.',
+    perk:null,
+    mods:{ allPay:1.15, liftCost:1.2 } },
+];
+const SHOP_ITEMS = [
+  { id:'purge',  icon:'✂️', name:'Снять проклятие', desc:'Убирает проклятие текущего этажа', price:200, once:true },
+  { id:'random', icon:'🎁', name:'Случайный перк',  desc:'Перк из оставшихся в пуле',        price:400, once:true },
+  { id:'ward',   icon:'🔮', name:'Оберег',          desc:'Следующий этаж без проклятия',    price:80,  once:true },
+  { id:'heal',   icon:'💊', name:'Страховка',       desc:'+40 фишек',                        price:30,  once:true },
+];
 const SLOT_SYMBOLS = [
   { id:'cherry', icon:'🍒', w:8, pay:7  },
   { id:'lemon',  icon:'🍋', w:7, pay:9  },
@@ -670,7 +821,6 @@ const BET_STEPS = [10,15,20,25,30,40,50,75,100,150,200,300,400,500,750,
                    1000,1500,2000,3000,4000,5000,7500,10000,15000,20000,
                    30000,50000,75000,100000,250000,500000,1000000];
 
-/* Рулетка */
 const ROULETTE_RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const rouColor = n => n === 0 ? 'green' : (ROULETTE_RED.has(n) ? 'red' : 'black');
 const ROULETTE_BETS = [
@@ -684,8 +834,6 @@ const ROULETTE_BETS = [
   { id:'d2',    label:'2-я дюжина',  cls:'',      pay:3, test:n => n >= 13 && n <= 24 },
   { id:'d3',    label:'3-я дюжина',  cls:'',      pay:3, test:n => n >= 25 && n <= 36 },
 ];
-
-/* Ачивки */
 const ACHIEVEMENTS = [
   { id:'first_win',   icon:'🎉', name:'Первая кровь',       desc:'Выиграть первую ставку' },
   { id:'streak_3',    icon:'🔥', name:'В ударе',            desc:'3 победы подряд' },
@@ -695,15 +843,13 @@ const ACHIEVEMENTS = [
   { id:'all_skulls',  icon:'💀', name:'Поцелуй смерти',     desc:'Поймать три черепа в слотах' },
   { id:'bj_natural',  icon:'🃏', name:'Натурал',            desc:'Собрать блэкджек с раздачи' },
   { id:'roulette_red',icon:'🔴', name:'Красное',            desc:'Выиграть на красном в рулетке' },
-  { id:'roulette_zero',icon:'🟢',name:'Зеро',               desc:'Увидеть зеро в рулетке (проигрыш засчитан)' },
+  { id:'roulette_zero',icon:'🟢',name:'Зеро',               desc:'Увидеть зеро в рулетке' },
   { id:'whale',       icon:'🐋', name:'Кит',                desc:'Поставить 1000+ за один раз' },
   { id:'floors_5',    icon:'🛗', name:'Полпути',            desc:'Добраться до 5 этажа' },
   { id:'floors_10',   icon:'🏆', name:'Вершина',            desc:'Добраться до 10 этажа' },
   { id:'escape',      icon:'🚪', name:'Свобода',            desc:'Выйти из казино живым' },
   { id:'broke',       icon:'💸', name:'На мели',            desc:'Проиграть всё до 10 фишек' },
 ];
-
-/* Случайные события на лифте (25% шанс) */
 const LIFT_EVENTS = [
   { icon:'🎁', name:'Найдена фишка',   desc:'Кто-то обронил у лифта',       chips:30,  weight:5 },
   { icon:'🎰', name:'Фриспин-бонус',   desc:'Автомат выдал премию',         chips:45,  weight:4 },
@@ -715,8 +861,8 @@ const LIFT_EVENTS = [
 /* -------------------------------- СОСТОЯНИЕ ----------------------------- */
 let S = null;
 let busy = false;
-let ACH = loadAch();           // Set id
-let RECS = loadRecs();          // массив записей
+let ACH = loadAch();
+let RECS = loadRecs();
 
 function loadAch() {
   try { const raw = localStorage.getItem(ACH_KEY); return new Set(raw ? JSON.parse(raw) : []); }
@@ -728,6 +874,8 @@ function loadRecs() {
   catch (e) { return []; }
 }
 function saveRecs() { try { localStorage.setItem(REC_KEY, JSON.stringify(RECS)); } catch (e) {} }
+function getPlayerName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
+function setPlayerName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
 
 function unlockAch(id) {
   if (ACH.has(id)) return;
@@ -746,14 +894,14 @@ function newRun() {
   S = {
     chips: START_CHIPS, floor: 1, peak: START_CHIPS,
     perks: [], curse: null, compUsed: false, keyUsed: false, bet: 25,
-    screen: 'hub',
+    screen: 'class',
     stats: { spins:0, hands:0, rolls:0, highs:0, rou:0, wins:0, biggest:0, floors:1 },
     winStreak: 0, bestStreak: 0,
+    cls: null, warded: false,
     over: false, result: null,
   };
-  rollCurse();
+  applyTheme();
   render();
-  if (S.chips < MIN_BET) { /* safety */ }
 }
 function migrate(s) {
   if (!s || typeof s !== 'object') return null;
@@ -766,13 +914,17 @@ function migrate(s) {
   if (typeof s.peak !== 'number') s.peak = s.chips;
   if (typeof s.winStreak !== 'number') s.winStreak = 0;
   if (typeof s.bestStreak !== 'number') s.bestStreak = 0;
-  s.screen = 'hub'; s.over = false; delete s._perkChoices;
+  if (!('cls' in s)) s.cls = null;
+  if (!('warded' in s)) s.warded = false;
+  s.screen = 'hub'; s.over = false;
+  delete s._perkChoices; delete s._shopItems;
   return s;
 }
 function saveRun() {
   try {
     if (!S || S.over || S.screen !== 'hub') return;
-    const c = JSON.parse(JSON.stringify(S)); delete c._perkChoices;
+    const c = JSON.parse(JSON.stringify(S));
+    delete c._perkChoices; delete c._shopItems;
     localStorage.setItem(RUN_KEY, JSON.stringify(c));
   } catch (e) {}
 }
@@ -782,6 +934,18 @@ function loadRun() {
 }
 function clearRun() { try { localStorage.removeItem(RUN_KEY); } catch (e) {} }
 
+/* ------------------------------ ТЕМА ЭТАЖА ------------------------------ */
+function themeForFloor(f) {
+  if (f <= 3) return 'warm';
+  if (f <= 6) return 'ember';
+  if (f <= 9) return 'frost';
+  return 'royal';
+}
+function applyTheme() {
+  const f = S ? S.floor : 1;
+  document.body.dataset.theme = themeForFloor(f);
+}
+
 /* ------------------------------ МОДИФИКАТОРЫ ---------------------------- */
 function hasPerk(id) {
   if (S.curse && S.curse.id === 'dry') return false;
@@ -789,30 +953,37 @@ function hasPerk(id) {
 }
 function streakMult() {
   if (!S) return 1;
-  if (S.winStreak >= STREAK_MIN) return 1 + STREAK_BONUS;
-  return 1;
+  return S.winStreak >= STREAK_MIN ? 1 + STREAK_BONUS : 1;
 }
+function classMods() { return (S && S.cls && S.cls.mods) ? S.cls.mods : {}; }
 function modMult(game) {
   let m = 1;
   if (S.curse && S.curse.id === 'heavy') m *= 0.9;
   if (game === 'slots' && hasPerk('hot')) m *= 1.25;
   if (hasPerk('whale') && S.bet >= 100) m *= 1.2;
   m *= streakMult();
+  const cm = classMods();
+  if (cm.allPay) m *= cm.allPay;
+  if (game === 'blackjack' && cm.bjBonus) m *= (1 + cm.bjBonus);
   return m;
 }
 function rollCurse() {
   if (S.floor === 1) { S.curse = null; return; }
-  S.curse = Math.random() < 0.58 ? pick(CURSES) : null;
+  if (S.warded) { S.warded = false; S.curse = null; toast('🔮 Оберег поглотил проклятие', 'good'); return; }
+  const resist = classMods().curseResist || 0;
+  const chance = 0.58 * (1 - resist);
+  S.curse = Math.random() < chance ? pick(CURSES) : null;
 }
 function anteCost() {
   let base = 30 + (S.floor - 1) * 55;
   if (S.curse && S.curse.id === 'tax') base *= 1.5;
   if (hasPerk('key') && !S.keyUsed) base *= 0.7;
+  const cm = classMods();
+  if (cm.liftCost) base *= cm.liftCost;
   return Math.round(base);
 }
 function maxBet() { return Math.max(80, S.floor * 90); }
 function betCap() { return Math.max(MIN_BET, Math.min(maxBet(), Math.floor(S.chips))); }
-function isLowMoney() { return S && S.chips < MIN_BET * 3; }
 
 /* ------------------------------ СТАВКА ---------------------------------- */
 function betSteps() {
@@ -910,7 +1081,7 @@ function ripple(e, btn) {
   } catch (err) {}
 }
 document.addEventListener('click', e => {
-  const b = e.target.closest('.btn, .gcard, .rou-btn, .perk, .ach-item, .rec-row');
+  const b = e.target.closest('.btn, .gcard, .rou-btn, .perk, .ach-item, .class-card, .shop-item .sp');
   if (b) ripple(e, b);
 }, true);
 
@@ -931,7 +1102,6 @@ function payout(bet, mult, game) {
   if (net > S.stats.biggest) S.stats.biggest = net;
   return win;
 }
-/* Регистрирует победу: инкремент серии + ачивки */
 function registerWin(net) {
   S.stats.wins++;
   S.winStreak++;
@@ -953,8 +1123,6 @@ function onLose(bet) {
   }
   return false;
 }
-
-/* ГЛАВНОЕ ИЗМЕНЕНИЕ v2.1: забег заканчивается, когда chips < MIN_BET */
 function checkBroke() {
   if (S.chips >= MIN_BET) return false;
   if (hasPerk('comp') && !S.compUsed) {
@@ -992,15 +1160,16 @@ function header() {
   <div class="hdr">
     <div class="hdr-title serif">Люкс-7<small>Этаж ${S.floor} / ${MAX_FLOOR}</small></div>
     ${curseBadge}
-    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
-    <button class="icon-btn" onclick="showHelp()">?</button>
+    <button class="icon-btn ${musicOn ? 'on' : ''}" id="musbtn" onclick="toggleMusic()" title="Музыка">${musicOn ? '🎵' : '🎶'}</button>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()" title="Звук">${soundOn ? '🔊' : '🔇'}</button>
+    <button class="icon-btn" onclick="showHelp()" title="Помощь">?</button>
   </div>`;
 }
 function chipBar() {
   const low = S.chips < MIN_BET;
   const veryLow = S.chips < MIN_BET * 3 && S.chips >= MIN_BET;
   const streakOn = S.winStreak >= STREAK_MIN;
-  const valClass = 'chip-val' + (S.chips > S.peak - 1 && S.chips > START_CHIPS ? '' : '') + (low ? ' low' : '');
+  const valClass = 'chip-val' + (low ? ' low' : '');
   return `
   <div class="chipbar">
     <div class="chip-display">
@@ -1011,6 +1180,7 @@ function chipBar() {
       </div>
     </div>
     <div class="badgerow">
+      ${S.cls ? `<div class="badge cls">${S.cls.icon} ${S.cls.name}</div>` : ''}
       ${streakOn ? `<div class="badge fire">🔥 ×${(1+STREAK_BONUS).toFixed(2)}</div>` : ''}
       ${veryLow ? `<div class="badge low">⚠ последний шанс</div>` : ''}
       ${low ? `<div class="badge low">💀 финал</div>` : `<div class="badge good ${S.chips >= anteCost() ? 'pulse' : ''}" id="liftbadge">Лифт: ${fmt(anteCost())}</div>`}
@@ -1069,10 +1239,11 @@ function infoBox(label, value, rightLabel, rightValue) {
 /* ------------------------------ РЕНДЕР -------------------------------- */
 function render() {
   if (!S) return;
-  if (S.over) { renderEnd(); return; }
+  if (S.screen === 'end') { renderEnd(); return; }
   const el = $('#app');
   let body = '';
   switch (S.screen) {
+    case 'class':     body = classScreen(); break;
     case 'hub':       body = hubScreen(); break;
     case 'slots':     body = slotsScreen(); break;
     case 'dice':      body = diceScreen(); break;
@@ -1080,12 +1251,51 @@ function render() {
     case 'blackjack': body = blackjackScreen(); break;
     case 'roulette':  body = rouletteScreen(); break;
     case 'perks':     body = perksScreen(); break;
+    case 'shop':      body = shopScreen(); break;
     case 'records':   body = recordsScreen(); break;
     case 'ach':       body = achScreen(); break;
     default:          body = hubScreen();
   }
   el.innerHTML = `<div class="anim-screen" style="display:flex;flex-direction:column;flex:1">${body}</div>`;
   if (S.screen === 'hub') saveRun();
+}
+
+/* ============================= ВЫБОР КЛАССА ============================ */
+function classScreen() {
+  return `
+  <div class="hdr">
+    <div class="hdr-title serif" style="font-size:14px">Люкс-7<small>Выбор класса</small></div>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
+    <button class="icon-btn" onclick="showHelp()">?</button>
+  </div>
+  <div class="pad" style="padding-top:8px">
+    <div style="font-family:Georgia,serif;font-size:24px;color:var(--gold2);letter-spacing:.08em;text-align:center;margin:14px 0 6px">Кто вы сегодня?</div>
+    <div style="font-size:13px;color:var(--mut);text-align:center;margin-bottom:22px;line-height:1.5">
+      Каждый забег начинается с выбора роли.<br>От неё зависят правила игры.
+    </div>
+    ${CLASSES.map(c => `
+      <div class="class-card" onclick="pickClass('${c.id}')">
+        <div class="ci">${c.icon}</div>
+        <div class="cn">${c.name}</div>
+        <div class="cd">${c.desc}</div>
+        <div class="cb">${c.perk ? 'Стартовый перк: ' + (PERKS.find(p => p.id === c.perk) || {}).name : 'Без стартового перка'}</div>
+      </div>`).join('')}
+  </div>
+  <div class="bottom">
+    <div style="text-align:center;font-size:11.5px;color:var(--mut);line-height:1.5">
+      Старт: <b style="color:var(--gold2)">${START_CHIPS}</b> фишек · <b style="color:var(--gold2)">${MAX_FLOOR}</b> этажей · банкротство при <b style="color:#e08a76">&lt; ${MIN_BET}</b> фишек
+    </div>
+  </div>`;
+}
+function pickClass(id) {
+  const c = CLASSES.find(x => x.id === id);
+  if (!c) return;
+  S.cls = c;
+  if (c.perk && !S.perks.includes(c.perk)) S.perks.push(c.perk);
+  S.screen = 'hub';
+  SFX.big(); buzz(30);
+  render();
+  toast(`${c.icon} ${c.name}`, 'gold');
 }
 
 /* ================================ ХАБ ================================== */
@@ -1111,12 +1321,20 @@ function hubScreen() {
          <div style="display:flex;gap:11px;align-items:center">
            <div style="font-size:22px">⚠️</div>
            <div><div style="font-weight:700;color:#e08a76;font-size:13px">На грани</div>
-           <div style="font-size:11.5px;color:var(--mut);margin-top:2px">Меньше ${MIN_BET * 3} фишек — проиграете, если останется < ${MIN_BET}. Играйте осторожно.</div></div>
+           <div style="font-size:11.5px;color:var(--mut);margin-top:2px">Меньше ${MIN_BET * 3} фишек. Опуститесь ниже ${MIN_BET} — и забег закончится.</div></div>
+         </div></div>` : '';
+  const clsRow = S.cls
+    ? `<div class="card" style="margin:10px 0 0;border-color:#2a3d5c;background:#12192a">
+         <div style="display:flex;gap:11px;align-items:center">
+           <div style="font-size:24px">${S.cls.icon}</div>
+           <div><div style="font-weight:700;color:#9bbaf5;font-size:13px">${S.cls.name}</div>
+           <div style="font-size:11.5px;color:var(--mut);margin-top:2px">${S.cls.desc}</div></div>
          </div></div>` : '';
   return `
   ${header()}
   ${chipBar()}
   <div class="pad">
+    ${clsRow}
     ${curse}
     ${lowWarn}
     ${perks}
@@ -1150,44 +1368,94 @@ function gcard(id, icon, name, desc, ev, kb) {
 }
 function go(screen) {
   if (busy) return;
-  saveRun(); SFX.click();
+  if (S.screen === 'hub') saveRun();
+  SFX.click();
   S.screen = screen;
-  if (screen === 'slots' || screen === 'dice' || screen === 'highlow' || screen === 'blackjack' || screen === 'roulette') {
+  if (!S.over && ['slots','dice','highlow','blackjack','roulette'].includes(screen)) {
     initGame(screen);
   }
   render();
 }
-function goHub() { if (busy) return; SFX.click(); S.screen = 'hub'; render(); }
+function goHub() {
+  if (busy) return;
+  SFX.click();
+  if (S.over) { S.screen = 'end'; render(); return; }
+  S.screen = 'hub';
+  render();
+}
 
-/* ============================== ЛИФТ / ПЕРКИ =========================== */
+/* ============================== ЛИФТ / ПЕРКИ / МАГАЗИН ================ */
 function takeElevator() {
   if (busy) return;
   const cost = anteCost();
   if (S.chips < cost) { toast('Недостаточно фишек', 'bad'); return; }
   if (S.floor >= MAX_FLOOR) { S.chips -= cost; endRun('escaped'); return; }
+
   S.chips -= cost;
   SFX.chip(); buzz(30);
   if (hasPerk('key') && !S.keyUsed) S.keyUsed = true;
   const app = $('#app');
   if (app) { app.classList.remove('anim-lift'); void app.offsetWidth; app.classList.add('anim-lift'); }
+
+  // Смена этажа
+  S.floor++;
+  S.stats.floors = S.floor;
+  if (S.floor >= 5) unlockAch('floors_5');
+  if (S.floor >= 10) unlockAch('floors_10');
+  S.keyUsed = false;
+  applyTheme();
+  rollCurse();
+
+  // Случайное событие
+  if (Math.random() < 0.25) {
+    const total = LIFT_EVENTS.reduce((s, e) => s + e.weight, 0);
+    let r = Math.random() * total;
+    let ev = LIFT_EVENTS[0];
+    for (const e of LIFT_EVENTS) { r -= e.weight; if (r <= 0) { ev = e; break; } }
+    S.chips += ev.chips;
+    if (S.chips > S.peak) S.peak = S.chips;
+    setTimeout(() => {
+      toast(`${ev.icon} ${ev.name}: +${ev.chips} фишек`, 'gold');
+      SFX.event();
+      confettiBurst(30);
+    }, 620);
+  }
+
+  // Кровавый сбор
+  if (S.curse && S.curse.id === 'blood') {
+    const loss = Math.round(S.chips * 0.05);
+    S.chips = Math.max(0, S.chips - loss);
+    toast(`🩸 Кровавый сбор: −${fmt(loss)}`, 'bad');
+  }
+
+  if (checkBroke()) return;
+
+  // Готовим магазин
+  S._shopItems = SHOP_ITEMS.map(it => ({...it, bought:false}));
+
+  // Идём к перкам или сразу в магазин
   const avail = PERKS.filter(p => !S.perks.includes(p.id));
-  if (avail.length === 0) { nextFloor(); return; }
-  S._perkChoices = shuffle(avail).slice(0, 3);
-  S.screen = 'perks';
+  if (avail.length > 0) {
+    S._perkChoices = shuffle(avail).slice(0, 3);
+    S.screen = 'perks';
+  } else {
+    S.screen = 'shop';
+  }
   render();
+  if (S.curse) setTimeout(() => toast(`${S.curse.icon} ${S.curse.name}: ${S.curse.desc}`, 'bad'), 900);
 }
 function perksScreen() {
   const choices = S._perkChoices || [];
   return `
   <div class="hdr">
-    <div class="hdr-title serif" style="font-size:14px">Этаж ${S.floor + 1}<small>Выберите один перк</small></div>
+    <div class="hdr-title serif" style="font-size:14px">Этаж ${S.floor}<small>Выберите один перк</small></div>
     <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
     <button class="icon-btn" onclick="showHelp()">?</button>
   </div>
   <div class="chipbar">
     <div class="chip-display">
       <div class="chip-coin" id="coin">${chipCoinSVG()}</div>
-      <div><div class="chip-val">${fmt(S.chips)}</div><div class="chip-sub">фишек</div></div>
+      <div><div class="chip-val">${fmt(S.chips)}</div><div class="chip-sub">фишек · этаж ${S.floor}</div></div>
     </div>
   </div>
   <div class="pad">
@@ -1206,40 +1474,96 @@ function choosePerk(id) {
   const p = PERKS.find(x => x.id === id);
   toast(`${p.icon} ${p.name}`, 'gold');
   SFX.big(); buzz(25);
-  nextFloor();
+  S.screen = 'shop';
+  render();
 }
-function nextFloor() {
-  S.floor++;
-  S.stats.floors = S.floor;
-  if (S.floor >= 5) unlockAch('floors_5');
-  if (S.floor >= 10) unlockAch('floors_10');
-  S.keyUsed = false;
-  rollCurse();
-
-  // Случайное событие на этаже (25%)
-  if (Math.random() < 0.25) {
-    const total = LIFT_EVENTS.reduce((s, e) => s + e.weight, 0);
-    let r = Math.random() * total;
-    let ev = LIFT_EVENTS[0];
-    for (const e of LIFT_EVENTS) { r -= e.weight; if (r <= 0) { ev = e; break; } }
-    S.chips += ev.chips;
+function shopScreen() {
+  const items = S._shopItems || (S._shopItems = SHOP_ITEMS.map(it => ({...it, bought:false})));
+  const hasCurse = !!S.curse;
+  const availPerks = PERKS.filter(p => !S.perks.includes(p.id)).length;
+  return `
+  <div class="hdr">
+    <div class="hdr-title serif" style="font-size:14px">🛒 Магазин<small>Этаж ${S.floor} · потратьте фишки</small></div>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
+    <button class="icon-btn" onclick="showHelp()">?</button>
+  </div>
+  <div class="chipbar">
+    <div class="chip-display">
+      <div class="chip-coin" id="coin">${chipCoinSVG()}</div>
+      <div><div class="chip-val">${fmt(S.chips)}</div><div class="chip-sub">фишек</div></div>
+    </div>
+  </div>
+  <div class="pad">
+    <div style="font-size:12.5px;color:var(--mut);margin-bottom:14px;text-align:center;line-height:1.5">
+      Продавец лениво листает газету. Можно купить пару вещей перед тем, как вернуться к столам.
+    </div>
+    ${items.map((it, i) => {
+      let disabled = false, extra = '';
+      if (it.id === 'purge' && !hasCurse) { disabled = true; extra = ' · нет проклятия'; }
+      if (it.id === 'random' && availPerks === 0) { disabled = true; extra = ' · все перки собраны'; }
+      const canAfford = S.chips >= it.price;
+      return `
+        <div class="shop-item ${it.bought ? 'bought' : ''} ${disabled ? 'disabled' : ''}">
+          <div class="si">${it.icon}</div>
+          <div style="min-width:0;flex:1">
+            <div class="sn">${it.name}</div>
+            <div class="sd">${it.desc}${extra}</div>
+          </div>
+          <button class="sp" ${it.bought || disabled || !canAfford ? 'disabled' : ''} onclick="buyShopItem(${i})">
+            ${it.bought ? '✓ Куплено' : fmt(it.price)}
+          </button>
+        </div>`;
+    }).join('')}
+  </div>
+  <div class="bottom">
+    <button class="btn" onclick="leaveShop()">Дальше → к столам</button>
+  </div>`;
+}
+function buyShopItem(i) {
+  const it = S._shopItems[i];
+  if (!it || it.bought) return;
+  if (S.chips < it.price) { toast('Недостаточно фишек', 'bad'); return; }
+  // проверка на снятие проклятия
+  if (it.id === 'purge' && !S.curse) { toast('Нечего снимать', 'bad'); return; }
+  if (it.id === 'random' && PERKS.every(p => S.perks.includes(p.id))) { toast('Все перки уже есть', 'bad'); return; }
+  S.chips -= it.price;
+  it.bought = true;
+  SFX.chip();
+  applyShopEffect(it.id);
+  render();
+  if (checkBroke()) return;
+}
+function applyShopEffect(id) {
+  if (id === 'purge') {
+    S.curse = null;
+    toast('✂️ Проклятие снято', 'good');
+    SFX.big();
+  } else if (id === 'random') {
+    const avail = PERKS.filter(p => !S.perks.includes(p.id));
+    if (avail.length) {
+      const p = pick(avail);
+      S.perks.push(p.id);
+      toast(`🎁 Получен перк: ${p.icon} ${p.name}`, 'gold');
+      SFX.big();
+      confettiBurst(40);
+    }
+  } else if (id === 'ward') {
+    S.warded = true;
+    toast('🔮 Оберег установлен', 'good');
+    SFX.event();
+  } else if (id === 'heal') {
+    S.chips += 40;
     if (S.chips > S.peak) S.peak = S.chips;
-    setTimeout(() => {
-      toast(`${ev.icon} ${ev.name}: +${ev.chips} фишек`, 'gold');
-      SFX.event();
-      confettiBurst(30);
-    }, 620);
+    toast('💊 +40 фишек', 'good');
+    animateChips('up');
   }
-
-  if (S.curse && S.curse.id === 'blood') {
-    const loss = Math.round(S.chips * 0.05);
-    S.chips = Math.max(0, S.chips - loss);
-    toast(`🩸 Кровавый сбор: −${fmt(loss)}`, 'bad');
-  }
+}
+function leaveShop() {
+  S._shopItems = null;
+  S._perkChoices = null;
   S.screen = 'hub';
   if (checkBroke()) return;
   render();
-  if (S.curse) setTimeout(() => toast(`${S.curse.icon} ${S.curse.name}: ${S.curse.desc}`, 'bad'), 900);
 }
 function shuffle(a) {
   a = a.slice();
@@ -1998,10 +2322,11 @@ async function spinRoulette() {
 /* ============================== ЭКРАНЫ ================================ */
 function achScreen() {
   const unlocked = ACH.size;
+  const back = S.over ? `onclick="goHub()"` : `onclick="goHub()"`;
   return `
   <div class="hdr">
-    <button class="icon-btn" onclick="goHub()">←</button>
-    <div class="hdr-title serif" style="font-size:14px">🏅 Достижения<small>${unlocked} / ${ACHIEVEMENTS.length}</small></div>
+    <button class="icon-btn" ${back}>←</button>
+    <div class="hdr-title serif" style="font-size:14px">🏅 Достижения<small>${unlocked} / ${ACHIEVEMENTS.length}${S.over ? ' · назад к итогу' : ''}</small></div>
     <button class="icon-btn" onclick="showHelp()">?</button>
   </div>
   <div class="pad" style="padding-top:8px">
@@ -2020,7 +2345,7 @@ function recordsScreen() {
   return `
   <div class="hdr">
     <button class="icon-btn" onclick="goHub()">←</button>
-    <div class="hdr-title serif" style="font-size:14px">🏆 Рекорды<small>Топ забегов · лучший: ${fmt(best)}</small></div>
+    <div class="hdr-title serif" style="font-size:14px">🏆 Рекорды<small>Лучший: ${fmt(best)}${S.over ? ' · назад к итогу' : ''}</small></div>
     <button class="icon-btn" onclick="showHelp()">?</button>
   </div>
   <div class="pad" style="padding-top:8px">
@@ -2030,14 +2355,15 @@ function recordsScreen() {
           <div class="rec-row ${r.fresh ? 'new' : ''}">
             <div class="rnum ${i === 0 ? 'g' : ''}">${i + 1}</div>
             <div style="display:flex;gap:6px;align-items:center;min-width:0">
-              <span class="rtag ${r.result === 'escaped' ? 'win' : 'dead'}">${r.result === 'escaped' ? '🏆 выход' : '💀 крах'}</span>
+              <span class="rtag ${r.result === 'escaped' ? 'win' : 'dead'}">${r.result === 'escaped' ? '🏆' : '💀'}</span>
+              <span class="rec-name">${r.name ? r.name : 'Безымянный'}</span>
               <span class="rfl">этаж ${r.floor}</span>
             </div>
             <div class="rchips" style="grid-column:3">${fmt(r.chips)}</div>
             <div class="rfl">${r.date}</div>
           </div>`).join('')
       : `<div style="color:var(--mut);font-size:13px;text-align:center;padding:26px 0">Пока пусто. Сыграйте первый забег.</div>`}
-
+    ${!S.over ? `
     <div class="sect">Текущий забег</div>
     <div style="width:100%">
       <div class="statline"><span>Этаж</span><span>${S.floor} / ${MAX_FLOOR}</span></div>
@@ -2048,11 +2374,10 @@ function recordsScreen() {
       <div class="statline"><span>Спинов слотов</span><span>${S.stats.spins}</span></div>
       <div class="statline"><span>Раздач БД</span><span>${S.stats.hands}</span></div>
       <div class="statline"><span>Бросков костей</span><span>${S.stats.rolls}</span></div>
-      <div class="statline"><span>Хай-Лоу заходов</span><span>${S.stats.highs}</span></div>
       <div class="statline"><span>Спинов рулетки</span><span>${S.stats.rou}</span></div>
       <div class="statline"><span>Крупнейший выигрыш</span><span>${fmt(S.stats.biggest)}</span></div>
       <div class="statline" style="border:none"><span>Перков</span><span>${S.perks.length}</span></div>
-    </div>
+    </div>` : ''}
     ${RECS.length ? `<button class="btn sec sm" style="margin-top:16px" onclick="clearRecs()">Очистить рекорды</button>` : ''}
   </div>`;
 }
@@ -2069,39 +2394,35 @@ function showHelp() {
   <div class="modal" onclick="if(event.target===this)closeModal()">
     <div class="modal-in">
       <h2>ЛЮКС-7 · Как играть</h2>
-      <p>Вы начинаете со <b class="k">100 фишками</b> на первом этаже подпольного казино. Цель — подняться на <b class="k">10-й этаж</b> и выйти живым.</p>
+      <p>Вы начинаете со <b class="k">100 фишками</b> на первом этаже. Цель — подняться на <b class="k">10-й этаж</b> и выйти живым.</p>
       <ul>
-        <li>Чтобы подняться на лифте, нужно <b>заплатить</b>. Стоимость растёт с каждым этажом.</li>
-        <li><b style="color:#e08a76">Если у вас осталось меньше ${MIN_BET} фишек — забег заканчивается.</b> Сделать ставку уже нельзя.</li>
-        <li>После каждого подъёма вы выбираете <b class="k">один перк</b> из трёх.</li>
-        <li>Со 2-го этажа появляются <b style="color:#e08a76">проклятия</b> — они меняют правила.</li>
-        <li>Иногда лифт приносит <b class="k">случайное событие</b>: +20…120 фишек.</li>
+        <li>Чтобы подняться, платите за лифт. Цена растёт с этажом.</li>
+        <li><b style="color:#e08a76">Если осталось меньше ${MIN_BET} фишек — забег закончен.</b></li>
+        <li>Выбираете <b class="k">класс</b> в начале, <b class="k">перк</b> после каждого подъёма и заходите в <b class="k">магазин</b>.</li>
+        <li>Со 2-го этажа — шанс <b style="color:#e08a76">проклятия</b>.</li>
+        <li>Иногда лифт приносит случайный бонус (+20…120 фишек).</li>
         <li>Забег <b>автосохраняется</b> между этажами.</li>
       </ul>
-      <h2 style="margin-top:22px">Серии и бонусы</h2>
-      <p>Три победы подряд дают <b class="k">🔥 +15% ко всем выплатам</b>, пока серия держится. Проигрыш обнуляет. Значок серии виден рядом с балансом.</p>
-      <h2 style="margin-top:22px">Ставка</h2>
-      <p>Ползунок нелинейный. Быстрые кнопки: <b>MIN</b>, <b>½</b>, <b>×2</b>, <b>ВСЁ</b>. Перк <b class="k">🐋 Хайроллер</b> подсвечивается золотым на ставке 100+ и даёт +20%.</p>
-      <h2 style="margin-top:22px">Игры</h2>
+      <h2 style="margin-top:22px">Классы</h2>
       <ul>
-        <li><b>🃏 Блэкджек</b> — самый безопасный стол. Дилер стоит на 17. Блэкджек платит 1.5:1.</li>
-        <li><b>🎡 Рулетка</b> — европейская, одно зеро. Простые ставки ×2, дюжины ×3.</li>
-        <li><b>🎲 Кости</b> — d100. Сам выбираешь порог. До 96×. Есть пресеты.</li>
-        <li><b>🂡 Хай-Лоу</b> — угадай больше/меньше. Серия повышает множитель.</li>
-        <li><b>🎰 Слоты</b> — три одинаковых от ×7 до ×80. Три черепа — теряешь вдвойне.</li>
+        <li>🎓 <b>Считающий</b> — старт с «Карточный счёт», БД +5%.</li>
+        <li>🍀 <b>Фортуна</b> — старт с «Талисман», шанс проклятия −25%.</li>
+        <li>🔥 <b>Рисковый</b> — все выплаты ×1.15, лифт +20%.</li>
       </ul>
+      <h2 style="margin-top:22px">Серии</h2>
+      <p>Три победы подряд — <b class="k">🔥 +15% к выплатам</b>, пока серия держится.</p>
+      <h2 style="margin-top:22px">Магазин</h2>
+      <p>После каждого подъёма можно потратить фишки: снять проклятие (200), купить перк (400), поставить оберег (80) или взять +40 фишек (30).</p>
       <h2 style="margin-top:22px">Горячие клавиши (ПК)</h2>
       <p>
-        <span class="kbd">1</span>–<span class="kbd">5</span> — открыть стол ·
-        <span class="kbd">Esc</span> — назад / закрыть ·
-        <span class="kbd">Space</span> — основное действие ·
-        <span class="kbd">R</span> — рекорды ·
-        <span class="kbd">A</span> — достижения ·
-        <span class="kbd">M</span> — звук ·
-        <span class="kbd">H</span> — помощь
+        <span class="kbd">1</span>–<span class="kbd">5</span> столы ·
+        <span class="kbd">Esc</span> назад/закрыть ·
+        <span class="kbd">Space</span> основное ·
+        <span class="kbd">R</span> рекорды ·
+        <span class="kbd">A</span> достижения ·
+        <span class="kbd">M</span> звук ·
+        <span class="kbd">H</span> помощь
       </p>
-      <h2 style="margin-top:22px">Совет</h2>
-      <p>Блэкджек и рулетка — ваша работа. Слоты — ваша жадность. Хай-лоу — ваша дисциплина. Не путайте.</p>
       <button class="btn sec" style="margin-top:22px" onclick="closeModal()">Понятно</button>
     </div>
   </div>`;
@@ -2113,10 +2434,37 @@ function showCurseInfo() {
     <div class="modal-in">
       <h2>${S.curse.icon} ${S.curse.name}</h2>
       <p>${S.curse.desc}</p>
-      <p style="margin-top:12px;font-size:12px">Проклятие действует только на этом этаже. Подниметесь — сменится.</p>
+      <p style="margin-top:12px;font-size:12px">Проклятие действует только на этом этаже.</p>
       <button class="btn sec" style="margin-top:20px" onclick="closeModal()">Закрыть</button>
     </div>
   </div>`;
+}
+function askNameForRecord() {
+  const saved = getPlayerName();
+  $('#modal-root').innerHTML = `
+  <div class="modal">
+    <div class="modal-in">
+      <h2>🏆 Новый рекорд!</h2>
+      <p style="margin-bottom:16px">${fmt(S.chips)} фишек · этаж ${S.floor}</p>
+      <p style="margin-bottom:8px;font-size:12px">Подпишите результат (необязательно):</p>
+      <input type="text" class="name-input" id="name-input" maxlength="18" placeholder="Ваше имя или ник" value="${saved.replace(/"/g, '&quot;')}">
+      <button class="btn" onclick="submitName()">Сохранить</button>
+      <button class="btn sec sm" style="margin-top:8px" onclick="submitName(true)">Пропустить</button>
+    </div>
+  </div>`;
+  setTimeout(() => { const i = $('#name-input'); if (i) i.focus(); }, 300);
+}
+function submitName(skip) {
+  const val = skip ? '' : (($('#name-input') || {}).value || '').trim();
+  if (val) setPlayerName(val);
+  const rec = RECS.find(r => r.fresh);
+  if (rec) {
+    rec.name = val || getPlayerName() || 'Безымянный';
+    rec.fresh = false;
+    saveRecs();
+  }
+  closeModal();
+  render();
 }
 
 /* ============================ КОНЕЦ ЗАБЕГА ============================= */
@@ -2124,8 +2472,10 @@ function endRun(reason) {
   clearRun();
   S.over = true;
   S.result = reason;
+  S.screen = 'end';
   const best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
-  if (S.chips > best) { localStorage.setItem(BEST_KEY, String(S.chips)); S.newBest = true; }
+  const isNewBest = S.chips > best;
+  if (isNewBest) { localStorage.setItem(BEST_KEY, String(S.chips)); S.newBest = true; }
   S.prevBest = best;
 
   // Запись рекорда
@@ -2135,6 +2485,7 @@ function endRun(reason) {
     result: reason,
     date: new Date().toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit' }),
     fresh: true,
+    name: getPlayerName() || '',
   };
   RECS.forEach(r => r.fresh = false);
   RECS.push(rec);
@@ -2145,7 +2496,11 @@ function endRun(reason) {
   if (reason === 'escaped') { unlockAch('escape'); confettiBurst(140); SFX.big(); }
   else SFX.lose();
   buzz([40, 60, 40]);
-  renderEnd();
+  render();
+  // Спросить имя, если новый личный рекорд
+  if (isNewBest && S.chips > 0) {
+    setTimeout(() => askNameForRecord(), 700);
+  }
 }
 function renderEnd() {
   const el = $('#app');
@@ -2160,13 +2515,14 @@ function renderEnd() {
     <div class="endlabel">${won ? `Этаж ${MAX_FLOOR} пройден` : `Осталось меньше ${MIN_BET} фишек на этаже ${S.floor}`}</div>
     ${S.newBest ? `<div class="badge good" style="margin-top:12px">★ Новый рекорд</div>` : `<div class="badge" style="margin-top:12px">Рекорд: ${fmt(best)}</div>`}
 
-    <div style="width:100%;max-width:320px;margin-top:22px">
+    <div style="width:100%;max-width:340px;margin-top:22px">
       <div class="sect" style="margin:0 0 8px;text-align:left">Ваш топ-5</div>
       ${RECS.map((r, i) => `
         <div class="rec-row ${r.fresh ? 'new' : ''}">
           <div class="rnum ${i === 0 ? 'g' : ''}">${i + 1}</div>
           <div style="display:flex;gap:6px;align-items:center;min-width:0">
             <span class="rtag ${r.result === 'escaped' ? 'win' : 'dead'}">${r.result === 'escaped' ? '🏆' : '💀'}</span>
+            <span class="rec-name">${r.name ? r.name : 'Безымянный'}</span>
             <span class="rfl">этаж ${r.floor}</span>
           </div>
           <div class="rchips">${fmt(r.chips)}</div>
@@ -2174,7 +2530,7 @@ function renderEnd() {
         </div>`).join('')}
     </div>
 
-    <div style="width:100%;max-width:320px;margin-top:22px">
+    <div style="width:100%;max-width:340px;margin-top:22px">
       <div class="statline"><span>Побед</span><span>${S.stats.wins}</span></div>
       <div class="statline"><span>Лучшая серия</span><span>${S.bestStreak}</span></div>
       <div class="statline"><span>Крупнейший выигрыш</span><span>${fmt(S.stats.biggest)}</span></div>
@@ -2182,12 +2538,45 @@ function renderEnd() {
       <div class="statline"><span>Ачивок открыто</span><span>${ACH.size} / ${ACHIEVEMENTS.length}</span></div>
     </div>
 
-    <div style="width:100%;max-width:320px;margin-top:26px">
+    <div style="width:100%;max-width:340px;margin-top:26px">
       <button class="btn ${won ? 'grn' : ''}" onclick="newRun()">${won ? 'Новый забег' : 'Попробовать снова'}</button>
+      <button class="btn blu sm" style="margin-top:9px" onclick="shareResult()">📋 Поделиться результатом</button>
+      <div class="row" style="margin-top:9px">
+        <button class="btn sec sm" onclick="go('ach')">🏅 Достижения</button>
+        <button class="btn sec sm" onclick="go('records')">🏆 Рекорды</button>
+      </div>
       <button class="btn sec sm" style="margin-top:9px" onclick="showHelp()">Как играть</button>
-      <button class="btn sec sm" style="margin-top:9px" onclick="S.screen='ach';S.over=false;render()">🏅 Достижения</button>
     </div>
   </div>`;
+}
+async function shareResult() {
+  const won = S.result === 'escaped';
+  const text = `ЛЮКС-7 · ${won ? 'вышел живым' : 'обанкротился'} на этаже ${S.floor} с ${fmt(S.chips)} фишек. Ачивок: ${ACH.size}/${ACHIEVEMENTS.length}. Побей мой результат!`;
+  try {
+    if (navigator.share && isMobileShare()) {
+      await navigator.share({ title: 'ЛЮКС-7', text });
+      return;
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      toast('📋 Скопировано в буфер', 'good');
+      return;
+    }
+    throw new Error('no clipboard');
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('📋 Скопировано', 'good');
+    } catch (e2) { toast('Не удалось скопировать', 'bad'); }
+  }
+}
+function isMobileShare() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
 }
 
 /* ====================== ФОНОВЫЕ ЧАСТИЦЫ (canvas) ======================= */
@@ -2295,19 +2684,35 @@ document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key.toLowerCase();
 
-  // Модалка — Esc закрывает
   if (k === 'escape') {
     if ($('#modal-root').innerHTML) { closeModal(); return; }
-    if (S && !S.over && S.screen !== 'hub') { goHub(); }
+    if (S && S.screen !== 'hub' && S.screen !== 'class') { goHub(); }
     return;
   }
-  if (S && S.over && (k === 'enter' || k === ' ')) { e.preventDefault(); newRun(); return; }
-  if (!S || S.over) return;
+  if (!S) return;
 
   if (k === 'm') { toggleSound(); return; }
   if (k === 'h' || k === '?') { showHelp(); return; }
 
-  // Только из хаба — открытие столов
+  // Экран смерти
+  if (S.over) {
+    if (S.screen === 'end') {
+      if (k === 'enter' || k === ' ') { e.preventDefault(); newRun(); }
+      else if (k === 'a') { e.preventDefault(); go('ach'); }
+      else if (k === 'r') { e.preventDefault(); go('records'); }
+    }
+    return;
+  }
+
+  // Экран выбора класса
+  if (S.screen === 'class') {
+    if (k === '1') { e.preventDefault(); pickClass(CLASSES[0].id); return; }
+    if (k === '2') { e.preventDefault(); pickClass(CLASSES[1].id); return; }
+    if (k === '3') { e.preventDefault(); pickClass(CLASSES[2].id); return; }
+    return;
+  }
+
+  // Хаб
   if (S.screen === 'hub') {
     if (k === '1') { e.preventDefault(); go('blackjack'); return; }
     if (k === '2') { e.preventDefault(); go('roulette'); return; }
@@ -2329,6 +2734,7 @@ document.addEventListener('keydown', e => {
     else if (S.screen === 'highlow') { if (hlState && hlState.phase === 'bet') startHL(); }
     else if (S.screen === 'blackjack') { if (bjState && bjState.phase === 'bet') bjDeal(); else if (bjState && bjState.phase === 'done') bjReset(); }
     else if (S.screen === 'roulette') { if (rouState && rouState.pick) spinRoulette(); }
+    else if (S.screen === 'shop') leaveShop();
   }
 });
 
@@ -2337,10 +2743,23 @@ document.addEventListener('keydown', e => {
   const saved = loadRun();
   if (saved) {
     S = saved;
+    applyTheme();
     render();
     setTimeout(() => toast('↻ Забег восстановлен · этаж ' + S.floor, 'gold'), 200);
   } else {
     newRun();
+  }
+  // Музыка при первом взаимодействии, если включена
+  if (musicOn) {
+    const startOnFirst = () => {
+      try { ac(); if (musicOn) startMusic(); } catch (e) {}
+      document.removeEventListener('click', startOnFirst);
+      document.removeEventListener('touchstart', startOnFirst);
+      document.removeEventListener('keydown', startOnFirst);
+    };
+    document.addEventListener('click', startOnFirst, { once: true });
+    document.addEventListener('touchstart', startOnFirst, { once: true });
+    document.addEventListener('keydown', startOnFirst, { once: true });
   }
 })();
 </script>
