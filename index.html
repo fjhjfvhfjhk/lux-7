@@ -6,16 +6,14 @@
 <meta name="theme-color" content="#0d0b09">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="ЛЮКС-7 — рогалик-казино. 10 этажей, 5 игр, перки, проклятия, классы, магазин, ачивки, рекорды.">
+<meta name="description" content="ЛЮКС-7 — рогалик-казино. 10 этажей, 5 игр, классы, перки, проклятия, магазин, ачивки, рекорды.">
 <title>ЛЮКС-7 — Рогалик-Казино</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><radialGradient id='g' cx='35%25' cy='28%25'><stop offset='0%25' stop-color='%23ffeaa7'/><stop offset='55%25' stop-color='%23f2c96b'/><stop offset='100%25' stop-color='%23a87520'/></radialGradient></defs><circle cx='20' cy='20' r='19' fill='url(%23g)' stroke='%236b4a12' stroke-width='1.4'/><circle cx='20' cy='20' r='14' fill='none' stroke='%236b4a12' stroke-width='0.9' opacity='.7' stroke-dasharray='2.4 2.4'/><text x='20' y='27' text-anchor='middle' font-size='20' font-weight='900' fill='%233a2606' font-family='Georgia,serif'>7</text></svg>">
 <style>
 /* ============================================================================
-   ЛЮКС-7 — РОГАЛИК-КАЗИНО · v2.2
-   v2.2: классы персонажа, магазин между этажами, темы этажей,
-         музыка, шаринг забега, PWA-манифест, исправлен баг навигации с
-         экрана смерти, имена в рекордах.
+   ЛЮКС-7 — РОГАЛИК-КАЗИНО · v2.3
+   v2.3: единый SVG-иконсет вместо эмодзи. 48 иконок, один спрайт.
    ============================================================================ */
 :root{
   --bg:#0d0b09; --panel:#17140f; --panel2:#201a12; --panel3:#2a2216;
@@ -27,19 +25,9 @@
   --ease:cubic-bezier(.2,1,.3,1);
   --bounce:cubic-bezier(.34,1.56,.64,1);
 }
-/* Темы этажей — меняются через body[data-theme] */
-body[data-theme="ember"]{
-  --panel:#1a1210; --panel2:#241815; --panel3:#2e1f1a;
-  --line:#3d2820; --line2:#4f3429;
-}
-body[data-theme="frost"]{
-  --panel:#0f1418; --panel2:#151c22; --panel3:#1d262e;
-  --line:#28323b; --line2:#3a4750;
-}
-body[data-theme="royal"]{
-  --panel:#150e1a; --panel2:#1c1424; --panel3:#261a30;
-  --line:#33243d; --line2:#46334f;
-}
+body[data-theme="ember"]{ --panel:#1a1210; --panel2:#241815; --panel3:#2e1f1a; --line:#3d2820; --line2:#4f3429; }
+body[data-theme="frost"]{ --panel:#0f1418; --panel2:#151c22; --panel3:#1d262e; --line:#28323b; --line2:#3a4750; }
+body[data-theme="royal"]{ --panel:#150e1a; --panel2:#1c1424; --panel3:#261a30; --line:#33243d; --line2:#46334f; }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;min-height:100%}
 body{
@@ -66,6 +54,18 @@ body::before{
   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
 }
 .serif{font-family:Georgia,"Times New Roman",serif}
+.sprite{position:absolute;left:-9999px;width:0;height:0;overflow:hidden}
+
+/* ---------- ICONS (весь визуальный язык иконок) ---------- */
+.ico{
+  display:inline-block;vertical-align:-0.15em;
+  fill:none;stroke:currentColor;
+  stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;
+  flex-shrink:0;
+  overflow:visible;
+}
+/* Заполненные акценты внутри иконок */
+.ico .fill-fg{fill:currentColor;stroke:none}
 
 /* ---------- ANIMATIONS ---------- */
 @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
@@ -120,10 +120,11 @@ body::before{
 .hdr-title small{display:block;font-size:9px;letter-spacing:.3em;color:var(--mut);margin-top:2px;-webkit-text-fill-color:var(--mut)}
 .icon-btn{
   width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);
-  background:var(--panel2);color:var(--mut);font-size:15px;
+  background:var(--panel2);color:var(--mut);
   display:grid;place-items:center;cursor:pointer;flex-shrink:0;
-  transition:transform .15s var(--ease), background .15s, color .15s;
+  transition:transform .15s var(--ease), background .15s, color .15s, border-color .15s;
 }
+.icon-btn .ico{stroke-width:1.7}
 .icon-btn:active{background:var(--panel3);transform:scale(.92)}
 .icon-btn.on{color:var(--gold2);border-color:var(--gold)}
 @media (max-width:420px){ .hdr .badge.curse{display:none} }
@@ -148,8 +149,10 @@ body::before{
   font-size:10px;padding:5px 9px;border-radius:20px;
   border:1px solid var(--line2);background:var(--panel2);color:var(--mut);
   letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:4px;
   transition:transform .15s var(--ease);
 }
+.badge .ico{stroke-width:2}
 .badge.curse{border-color:#5c2a22;background:#2a1411;color:#e08a76;animation:cursePulse 3s ease-in-out infinite}
 .badge.good{border-color:#26503c;background:#12241a;color:#7fd6a8}
 .badge.low{border-color:#7a352a;color:#e08a76;animation:dangerPulse 1.2s ease-in-out infinite}
@@ -171,7 +174,7 @@ body::before{
 .gcard{
   background:linear-gradient(160deg,var(--panel2),var(--panel));
   border:1px solid var(--line);border-radius:var(--r);
-  padding:15px 13px;cursor:pointer;position:relative;overflow:hidden;
+  padding:16px 14px;cursor:pointer;position:relative;overflow:hidden;
   transition:transform .18s var(--ease), border-color .18s, box-shadow .18s;
   will-change:transform;
 }
@@ -183,8 +186,13 @@ body::before{
 }
 .gcard:hover::after{background-position:250% 0}
 .gcard:active{transform:scale(.96);border-color:var(--line2)}
-.gcard .gi{font-size:26px;line-height:1;margin-bottom:9px;display:block;transition:transform .3s var(--bounce)}
-.gcard:hover .gi{transform:scale(1.18) rotate(-6deg)}
+.gcard .gi{
+  display:flex;align-items:center;justify-content:flex-start;
+  margin-bottom:12px;color:var(--gold2);
+  transition:transform .3s var(--bounce), color .2s;
+}
+.gcard .gi .ico{stroke-width:1.5}
+.gcard:hover .gi{transform:scale(1.12);color:#fff6d8}
 .gcard .gn{font-weight:700;font-size:14px;margin-bottom:3px}
 .gcard .gd{font-size:11px;color:var(--mut);line-height:1.35}
 .gcard .ev{
@@ -246,11 +254,13 @@ body::before{
   text-transform:uppercase;cursor:pointer;
   box-shadow:0 4px 16px rgba(217,164,65,.22);
   transition:transform .1s var(--ease), filter .15s, box-shadow .3s;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
 }
 .btn:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 6px 22px rgba(217,164,65,.32)}
 .btn:active:not(:disabled){transform:scale(.975);filter:brightness(.94)}
 .btn:disabled{background:var(--panel3);color:#5c5142;box-shadow:none;cursor:not-allowed}
 .btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:ripple .65s var(--ease);pointer-events:none}
+.btn .ico{stroke-width:1.9}
 .btn.sec{background:var(--panel2);border:1px solid var(--line2);color:var(--txt);box-shadow:none;font-weight:600}
 .btn.sec:active{background:var(--panel3)}
 .btn.danger{background:linear-gradient(180deg,#d9614a,#a83b28);color:#fff}
@@ -285,15 +295,18 @@ body::before{
 .reel{
   width:70px;height:78px;border-radius:12px;
   background:linear-gradient(180deg,#fdf9ee,#e6dcc6);
-  border:2px solid #b99b5c;display:grid;place-items:center;font-size:36px;
+  border:2px solid #b99b5c;display:grid;place-items:center;
   box-shadow:inset 0 -10px 18px rgba(0,0,0,.16), 0 3px 12px rgba(0,0,0,.4);
   transition:transform .25s var(--bounce), box-shadow .25s;
+  color:#3a2606;
 }
+.reel .ico{stroke-width:1.4;width:44px;height:44px}
 .reel.spin{animation:reelBlur .18s linear infinite}
 .reel.settled{transform:scale(1.08)}
 .reel.win{animation:slotWin .55s var(--ease) both;box-shadow:0 0 26px rgba(217,164,65,.55),inset 0 -10px 18px rgba(0,0,0,.16)}
 .paytable{width:100%;font-size:11px;color:var(--mut);display:grid;grid-template-columns:repeat(3,1fr);gap:5px 8px;margin-top:4px}
 .paytable span{display:flex;gap:5px;align-items:center}
+.paytable .ico{width:14px;height:14px;color:#b99b5c}
 
 /* ---------- CARDS ---------- */
 .hand{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;min-height:78px;align-items:center;perspective:800px}
@@ -386,7 +399,7 @@ body::before{
 
 /* ---------- PERKS ---------- */
 .perk{
-  display:flex;gap:12px;align-items:flex-start;
+  display:flex;gap:14px;align-items:flex-start;
   background:var(--panel);border:1px solid var(--line);
   border-radius:var(--r);padding:14px;cursor:pointer;
   transition:transform .18s var(--ease), border-color .18s, box-shadow .25s;
@@ -404,16 +417,22 @@ body::before{
 .perk:hover::after{background-position:250% 0}
 .perk:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 8px 24px rgba(217,164,65,.14)}
 .perk:active{transform:scale(.98);border-color:var(--gold)}
-.perk .pi{font-size:26px;line-height:1;flex-shrink:0;transition:transform .3s var(--bounce)}
-.perk:hover .pi{transform:scale(1.2) rotate(-8deg)}
+.perk .pi{
+  flex-shrink:0;color:var(--gold2);
+  transition:transform .3s var(--bounce);
+}
+.perk .pi .ico{stroke-width:1.6;display:block}
+.perk:hover .pi{transform:scale(1.15) rotate(-5deg)}
 .perk .pn{font-weight:700;font-size:14px;margin-bottom:4px;color:var(--gold2)}
 .perk .pd{font-size:12px;color:var(--mut);line-height:1.42}
 .perk-list{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px}
 .pchip{
   font-size:11px;padding:5px 9px;border-radius:8px;background:var(--panel2);
-  border:1px solid var(--line2);color:var(--gold2);display:flex;gap:5px;align-items:center;
+  border:1px solid var(--line2);color:var(--gold2);
+  display:inline-flex;gap:5px;align-items:center;
   transition:transform .15s var(--ease);
 }
+.pchip .ico{stroke-width:1.8}
 .pchip:hover{transform:translateY(-1px) scale(1.04)}
 
 /* ---------- CLASSES ---------- */
@@ -430,15 +449,17 @@ body::before{
 .class-card:nth-child(3){animation-delay:.16s}
 .class-card:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 12px 30px rgba(217,164,65,.15)}
 .class-card:active{transform:scale(.98)}
-.class-card .ci{font-size:38px;line-height:1;transition:transform .3s var(--bounce)}
-.class-card:hover .ci{transform:scale(1.15) rotate(-8deg)}
+.class-card .ci{color:var(--gold2);transition:transform .3s var(--bounce);display:flex}
+.class-card .ci .ico{stroke-width:1.5;display:block}
+.class-card:hover .ci{transform:scale(1.1) rotate(-6deg)}
 .class-card .cn{font-family:Georgia,serif;font-weight:700;font-size:19px;color:var(--gold2);letter-spacing:.04em}
 .class-card .cd{font-size:13px;color:var(--mut);line-height:1.5}
-.class-card .cb{font-size:11px;color:var(--gold2);background:rgba(217,164,65,.1);border:1px solid rgba(217,164,65,.3);padding:5px 10px;border-radius:8px;letter-spacing:.05em}
+.class-card .cb{font-size:11px;color:var(--gold2);background:rgba(217,164,65,.1);border:1px solid rgba(217,164,65,.3);padding:5px 10px;border-radius:8px;letter-spacing:.05em;display:inline-flex;align-items:center;gap:6px}
+.class-card .cb .ico{stroke-width:1.9}
 
 /* ---------- SHOP ---------- */
 .shop-item{
-  display:flex;gap:12px;align-items:center;
+  display:flex;gap:14px;align-items:center;
   background:var(--panel);border:1px solid var(--line);border-radius:12px;
   padding:14px;margin-bottom:9px;
   transition:transform .15s var(--ease), border-color .2s, box-shadow .2s;
@@ -446,7 +467,8 @@ body::before{
 .shop-item:hover{transform:translateY(-1px)}
 .shop-item.bought{border-color:#26503c;background:linear-gradient(160deg,#12241a,#101a14);opacity:.7}
 .shop-item.disabled{opacity:.45}
-.shop-item .si{font-size:30px;flex-shrink:0}
+.shop-item .si{flex-shrink:0;color:var(--gold2);display:flex}
+.shop-item .si .ico{stroke-width:1.6;display:block}
 .shop-item .sn{font-weight:700;font-size:13.5px;margin-bottom:3px;color:var(--txt)}
 .shop-item .sd{font-size:11.5px;color:var(--mut);line-height:1.4}
 .shop-item .sp{
@@ -455,22 +477,26 @@ body::before{
   background:linear-gradient(180deg,#e8bd63,#c9922f);color:#241a06;
   cursor:pointer;border:none;white-space:nowrap;flex-shrink:0;
   transition:transform .12s var(--ease);
+  display:inline-flex;align-items:center;gap:5px;
 }
+.shop-item .sp .ico{stroke-width:2}
 .shop-item .sp:active{transform:scale(.95)}
 .shop-item .sp:disabled{background:var(--panel3);color:#5c5142;cursor:not-allowed}
 .shop-item.bought .sp{background:linear-gradient(180deg,#5fc08c,#37865c);color:#04210f}
 
 /* ---------- ACHIEVEMENTS ---------- */
 .ach-item{
-  display:flex;gap:12px;align-items:center;
+  display:flex;gap:14px;align-items:center;
   padding:12px 14px;border:1px solid var(--line);border-radius:12px;
   background:var(--panel2);margin-bottom:8px;
   transition:.2s var(--ease);
 }
 .ach-item.locked{opacity:.4;filter:grayscale(1)}
 .ach-item.unlocked{border-color:#6b5220;background:linear-gradient(160deg,#2a2114,#1c1710)}
-.ach-item .ai{font-size:26px;flex-shrink:0;transition:transform .3s var(--bounce)}
-.ach-item.unlocked:hover .ai{transform:scale(1.15) rotate(-6deg)}
+.ach-item .ai{flex-shrink:0;color:var(--gold2);display:flex;transition:transform .3s var(--bounce)}
+.ach-item.locked .ai{color:var(--mut)}
+.ach-item .ai .ico{stroke-width:1.6;display:block}
+.ach-item.unlocked:hover .ai{transform:scale(1.12) rotate(-4deg)}
 .ach-item .an{font-weight:700;font-size:13px;margin-bottom:3px;color:var(--txt)}
 .ach-item.unlocked .an{color:var(--gold2)}
 .ach-item .ad{font-size:11.5px;color:var(--mut);line-height:1.35}
@@ -489,7 +515,12 @@ body::before{
 .rec-row .rnum.g{color:var(--gold2)}
 .rec-row .rchips{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
 .rec-row .rfl{color:var(--mut);font-size:11px;font-variant-numeric:tabular-nums}
-.rec-row .rtag{font-size:10px;padding:3px 7px;border-radius:6px;background:var(--panel3);color:var(--mut);letter-spacing:.04em}
+.rec-row .rtag{
+  font-size:10px;padding:3px 5px;border-radius:6px;
+  background:var(--panel3);color:var(--mut);
+  display:inline-flex;align-items:center;
+}
+.rec-row .rtag .ico{stroke-width:2;width:11px;height:11px}
 .rec-row .rtag.win{background:#12241a;color:#7fd6a8}
 .rec-row .rtag.dead{background:#2a1411;color:#e08a76}
 .rec-name{font-weight:700;color:var(--gold2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -501,7 +532,9 @@ body::before{
   padding:10px 16px;border-radius:11px;font-size:13px;font-weight:600;
   box-shadow:0 8px 26px rgba(0,0,0,.6);animation:tin .3s var(--bounce);
   max-width:100%;text-align:center;
+  display:inline-flex;align-items:center;gap:8px;
 }
+.toast .ico{stroke-width:1.9;flex-shrink:0}
 .toast.good{border-color:#26503c;color:#7fd6a8}
 .toast.bad{border-color:#5c2a22;color:#e08a76}
 .toast.gold{border-color:#6b5220;color:var(--gold2)}
@@ -516,7 +549,8 @@ body::before{
   max-width:520px;width:100%;max-height:86dvh;overflow-y:auto;
   animation:up .28s var(--ease);
 }
-.modal h2{margin:0 0 14px;font-size:17px;font-family:Georgia,serif;color:var(--gold2);letter-spacing:.06em}
+.modal h2{margin:0 0 14px;font-size:17px;font-family:Georgia,serif;color:var(--gold2);letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.modal h2 .ico{stroke-width:1.7}
 .modal p,.modal li{font-size:13px;color:var(--mut);line-height:1.6}
 .modal ul{padding-left:18px;margin:8px 0}
 .modal b{color:var(--txt)}
@@ -536,7 +570,13 @@ body::before{
 
 /* ---------- END ---------- */
 .endwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 22px;text-align:center;gap:8px}
-.endicon{font-size:64px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 6px 20px rgba(217,164,65,.3));animation:floatY 3s ease-in-out infinite}
+.endicon{
+  margin-bottom:8px;
+  filter:drop-shadow(0 6px 20px rgba(217,164,65,.3));
+  animation:floatY 3s ease-in-out infinite;
+  display:flex;justify-content:center;
+}
+.endicon .ico{stroke-width:1.3}
 .endtitle{font-family:Georgia,serif;font-size:28px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2)}
 .endscore{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;margin:8px 0 2px}
 .endlabel{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut)}
@@ -566,7 +606,8 @@ body::before{
   }
   .hdr-title{font-size:20px}
   .hdr-title small{font-size:10px;letter-spacing:.35em}
-  .icon-btn{width:40px;height:40px;font-size:17px;border-radius:11px}
+  .icon-btn{width:40px;height:40px;border-radius:11px}
+  .icon-btn .ico{width:20px;height:20px}
 
   .chipbar{padding:6px 4px 18px;align-items:flex-start;gap:24px;flex-wrap:nowrap}
   .chip-coin{width:52px;height:52px}
@@ -578,17 +619,20 @@ body::before{
   .sect{margin:22px 0 12px;font-size:11px;letter-spacing:.26em}
 
   .grid{grid-template-columns:repeat(3,1fr);gap:14px;padding:0}
-  .gcard{padding:22px 18px;border-radius:16px}
-  .gcard .gi{font-size:38px;margin-bottom:14px}
+  .gcard{padding:24px 20px;border-radius:16px}
+  .gcard .gi{margin-bottom:18px}
+  .gcard .gi .ico{width:52px;height:52px;stroke-width:1.35}
   .gcard .gn{font-size:16px;margin-bottom:5px}
   .gcard .gd{font-size:12px;line-height:1.45}
   .gcard .ev{font-size:10px;padding:4px 8px}
   .gcard.wide{grid-column:auto}
 
   .stage{margin:16px 0;padding:38px 32px;min-height:340px;border-radius:18px}
-  .reel{width:96px;height:104px;font-size:48px;border-radius:14px}
+  .reel{width:96px;height:104px;border-radius:14px}
+  .reel .ico{width:62px;height:62px;stroke-width:1.25}
   .reels{gap:14px}
   .paytable{font-size:12px;gap:8px 12px;max-width:420px}
+  .paytable .ico{width:16px;height:16px}
 
   .betpanel{margin:16px 0 0;padding:18px 20px;border-radius:16px}
   .bet-top .bv{font-size:26px}
@@ -612,7 +656,7 @@ body::before{
   .pchip{font-size:12px;padding:7px 12px}
 
   .endwrap{padding:60px 30px}
-  .endicon{font-size:82px}
+  .endicon .ico{width:96px;height:96px}
   .endtitle{font-size:34px}
   .endscore{font-size:56px}
 
@@ -620,9 +664,10 @@ body::before{
   .modal-in{border-radius:22px;border:1px solid var(--line2);padding:28px 28px 24px;max-width:600px;animation:screenIn .3s var(--ease)}
   #toasts{bottom:auto;top:24px;justify-content:center}
 
-  .class-card{padding:26px 24px}
-  .class-card .ci{font-size:48px}
+  .class-card{padding:26px 24px;flex-direction:row;align-items:flex-start;gap:20px}
+  .class-card .ci .ico{width:56px;height:56px}
   .class-card .cn{font-size:22px}
+  .class-card > div:not(.ci){flex:1}
 }
 @media (min-width:1200px){
   #app{max-width:1180px;padding:30px}
@@ -630,7 +675,7 @@ body::before{
 }
 @media (hover:none){
   .gcard:hover::after,.perk:hover::after{background-position:-150% 0}
-  .gcard:hover .gi{transform:none}
+  .gcard:hover .gi{transform:none;color:var(--gold2)}
   .perk:hover{transform:none;border-color:var(--line)}
   .perk:hover .pi{transform:none}
   .pcard:hover{transform:none}
@@ -643,6 +688,228 @@ body::before{
 </style>
 </head>
 <body data-theme="warm">
+
+<!-- ============================================================================
+     SVG ICON SPRITE — единый иконсет, stroke: currentColor
+     ============================================================================ -->
+<svg class="sprite" aria-hidden="true">
+  <!-- ============ GAME ICONS ============ -->
+  <symbol id="g-bj" viewBox="0 0 24 24">
+    <path d="M7.5 3 L14 4.5 L11.5 17.5 L5 16 Z"/>
+    <path d="M10.5 4.5 L17 6 L14.5 19 L8 17.5" opacity=".5"/>
+    <circle cx="9.5" cy="10" r="1.7" class="fill-fg"/>
+  </symbol>
+  <symbol id="g-roulette" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <circle cx="12" cy="12" r="2.4" class="fill-fg"/>
+    <path d="M12 3 L12 6 M18.4 5.6 L16.2 7.8 M21 12 L18 12 M18.4 18.4 L16.2 16.2 M12 21 L12 18 M5.6 18.4 L7.8 16.2 M3 12 L6 12 M5.6 5.6 L7.8 7.8" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="g-dice" viewBox="0 0 24 24">
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/>
+    <circle cx="8" cy="8" r="1.4" class="fill-fg"/>
+    <circle cx="16" cy="8" r="1.4" class="fill-fg"/>
+    <circle cx="12" cy="12" r="1.4" class="fill-fg"/>
+    <circle cx="8" cy="16" r="1.4" class="fill-fg"/>
+    <circle cx="16" cy="16" r="1.4" class="fill-fg"/>
+  </symbol>
+  <symbol id="g-hl" viewBox="0 0 24 24">
+    <rect x="3" y="5" width="10" height="14" rx="1.5"/>
+    <path d="M18 5 L18 10 M15.5 7.5 L18 5 L20.5 7.5" stroke-width="1.7"/>
+    <path d="M18 19 L18 14 M15.5 16.5 L18 19 L20.5 16.5" stroke-width="1.7" opacity=".55"/>
+  </symbol>
+  <symbol id="g-slots" viewBox="0 0 24 24">
+    <rect x="3" y="5" width="18" height="13" rx="2"/>
+    <path d="M9 5 L9 18 M15 5 L15 18" opacity=".5"/>
+    <circle cx="6" cy="11.5" r="1.4" class="fill-fg"/>
+    <circle cx="12" cy="11.5" r="1.4" class="fill-fg"/>
+    <circle cx="18" cy="11.5" r="1.4" class="fill-fg"/>
+    <circle cx="20" cy="21" r="1.3" class="fill-fg" opacity=".7"/>
+    <path d="M20 18 L20 19.5" stroke-width="1.5"/>
+  </symbol>
+
+  <!-- ============ PERK ICONS ============ -->
+  <symbol id="p-hot" viewBox="0 0 24 24">
+    <path d="M12 3 Q7 10 7 14.5 Q7 19 12 19 Q17 19 17 14.5 Q17 10 12 3 Z"/>
+    <path d="M12 10 Q10.5 12.5 10.5 14 Q10.5 16 12 16 Q13.5 16 13.5 14 Q13.5 12.5 12 10 Z" class="fill-fg" opacity=".55"/>
+  </symbol>
+  <symbol id="p-counter" viewBox="0 0 24 24">
+    <path d="M9 4.5 Q6 4.5 5 7 Q4.5 9 6 10.5 Q4.5 11.5 5 14 Q5.5 17 8.5 17.5 Q9 19.5 11.5 19.5 Q14 19.5 15 17.5 Q18 17 18.5 14 Q19 11.5 17.5 10.5 Q19 9 18.5 7 Q17.5 4.5 14.5 4.5 Q13.5 3 12 3 Q10.5 3 9 4.5 Z"/>
+    <path d="M12 3.5 L12 19.5" opacity=".35" stroke-width="1.1"/>
+  </symbol>
+  <symbol id="p-cheat" viewBox="0 0 24 24">
+    <rect x="3.5" y="3.5" width="15" height="15" rx="2.5"/>
+    <circle cx="8" cy="8" r="1.3" class="fill-fg"/>
+    <circle cx="14" cy="14" r="1.3" class="fill-fg"/>
+    <path d="M19 15 L19.4 17.6 L22 18 L19.4 18.4 L19 21 L18.6 18.4 L16 18 L18.6 17.6 Z" class="fill-fg" stroke="none"/>
+  </symbol>
+  <symbol id="p-comp" viewBox="0 0 24 24">
+    <path d="M12 3 L20 6 L20 12 Q20 18 12 21 Q4 18 4 12 L4 6 Z"/>
+    <path d="M12 9 L12 15 M9 12 L15 12" stroke-width="1.8"/>
+  </symbol>
+  <symbol id="p-ace" viewBox="0 0 24 24">
+    <path d="M12 4 Q8 8 8 10.5 Q8 12.5 10 12.5 Q11 12.5 11.5 12 Q11.5 14 10 15 L14 15 Q12.5 14 12.5 12 Q13 12.5 14 12.5 Q16 12.5 16 10.5 Q16 8 12 4 Z" class="fill-fg" stroke-width=".4"/>
+  </symbol>
+  <symbol id="p-whale" viewBox="0 0 24 24">
+    <path d="M3 15 Q3 9 10 9 Q14 9 16 11 Q17 10 18 10 L21 8 L20 11 L22 13 L19 14 Q18 17 14 17 L14 19 Q14 21 12 21 L8 21 Q6 21 6 19 L6 17 Q3 17 3 15 Z"/>
+    <circle cx="15" cy="12.5" r=".9" class="fill-fg"/>
+  </symbol>
+  <symbol id="p-lucky" viewBox="0 0 24 24">
+    <circle cx="12" cy="8" r="3"/>
+    <circle cx="12" cy="16" r="3"/>
+    <circle cx="8" cy="12" r="3"/>
+    <circle cx="16" cy="12" r="3"/>
+    <path d="M12 16 Q14 19 12 21" stroke-width="1.4" opacity=".6"/>
+  </symbol>
+  <symbol id="p-key" viewBox="0 0 24 24">
+    <circle cx="8" cy="8" r="4.5"/>
+    <path d="M11.2 11.2 L20 20" stroke-width="1.8"/>
+    <path d="M15 15 L13 17"/>
+    <path d="M17.5 17.5 L15.5 19.5"/>
+  </symbol>
+
+  <!-- ============ CURSE ICONS ============ -->
+  <symbol id="c-heavy" viewBox="0 0 24 24">
+    <path d="M3 9 L17 9 M6 12 L21 12 M3 15 L15 15 M7 18 L19 18" stroke-width="1.7" opacity=".8"/>
+  </symbol>
+  <symbol id="c-tax" viewBox="0 0 24 24">
+    <circle cx="9" cy="12" r="6"/>
+    <path d="M9 8.8 L9 15.2 M6.8 10.2 L11.2 10.2 M6.8 13.8 L11.2 13.8" stroke-width="1.5"/>
+    <path d="M16.5 8 L21.5 8 L21.5 13 M21.5 8 L15.5 14" stroke-width="1.5" opacity=".7"/>
+  </symbol>
+  <symbol id="c-blood" viewBox="0 0 24 24">
+    <path d="M12 3 Q5 12 5 16 Q5 20 12 20 Q19 20 19 16 Q19 12 12 3 Z"/>
+    <circle cx="9" cy="15" r="1.5" class="fill-fg" opacity=".5"/>
+  </symbol>
+  <symbol id="c-skull" viewBox="0 0 24 24">
+    <path d="M5 11 Q5 4 12 4 Q19 4 19 11 Q19 13.5 17 14.5 L17 17 Q17 19 15 19 L14 19 L14 20 Q14 21 13 21 Q12 21 12 20 L12 19 L11 19 Q9 19 9 17 L9 14.5 Q7 13.5 7 11 Z"/>
+    <circle cx="9.5" cy="11" r="1.4" class="fill-fg"/>
+    <circle cx="14.5" cy="11" r="1.4" class="fill-fg"/>
+  </symbol>
+  <symbol id="c-cold" viewBox="0 0 24 24">
+    <path d="M12 3 L12 21 M4.2 7.5 L19.8 16.5 M4.2 16.5 L19.8 7.5"/>
+    <path d="M12 3 L10 5 M12 3 L14 5 M12 21 L10 19 M12 21 L14 19 M4.2 7.5 L6.5 8 M4.2 7.5 L4.6 5 M19.8 16.5 L17.5 16 M19.8 16.5 L19.4 19 M4.2 16.5 L6.5 16 M4.2 16.5 L4.6 19 M19.8 7.5 L17.5 8 M19.8 7.5 L19.4 5" stroke-width="1.3" opacity=".6"/>
+  </symbol>
+  <symbol id="c-dry" viewBox="0 0 24 24">
+    <path d="M10 3 L14 3 M10 3 L10 5 L9 7 L9 19 Q9 21 12 21 Q15 21 15 19 L15 7 L14 5 L14 3"/>
+    <path d="M5 5 L19 19" stroke-width="2"/>
+  </symbol>
+
+  <!-- ============ CLASS ICONS ============ -->
+  <symbol id="k-scholar" viewBox="0 0 24 24">
+    <path d="M2 10 L12 5 L22 10 L12 15 Z"/>
+    <path d="M6 12 L6 16 Q6 19 12 19 Q18 19 18 16 L18 12"/>
+    <path d="M22 10 L22 15" stroke-width="1.4"/>
+  </symbol>
+
+  <!-- ============ SHOP ICONS ============ -->
+  <symbol id="s-purge" viewBox="0 0 24 24">
+    <circle cx="6" cy="6" r="2.5"/>
+    <circle cx="6" cy="18" r="2.5"/>
+    <path d="M8 7.5 L19 17"/>
+    <path d="M8 16.5 L19 7"/>
+  </symbol>
+  <symbol id="s-gift" viewBox="0 0 24 24">
+    <rect x="4" y="9" width="16" height="11" rx="1.5"/>
+    <rect x="2.5" y="6" width="19" height="4" rx="1"/>
+    <path d="M12 6 L12 20"/>
+    <path d="M12 6 Q12 3 9 3 Q6 3 6 5.5 Q6 7 9 6"/>
+    <path d="M12 6 Q12 3 15 3 Q18 3 18 5.5 Q18 7 15 6"/>
+  </symbol>
+  <symbol id="s-ward" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <circle cx="12" cy="12" r="5" opacity=".6"/>
+    <circle cx="12" cy="12" r="2" class="fill-fg"/>
+    <path d="M12 3 L12 5 M12 19 L12 21 M3 12 L5 12 M19 12 L21 12" stroke-width="1.3"/>
+  </symbol>
+  <symbol id="s-heal" viewBox="0 0 24 24">
+    <path d="M12 20 Q3 13 3 8.5 Q3 4.5 7 4.5 Q10 4.5 12 7 Q14 4.5 17 4.5 Q21 4.5 21 8.5 Q21 13 12 20 Z"/>
+  </symbol>
+
+  <!-- ============ ACHIEVEMENT ICONS ============ -->
+  <symbol id="a-check" viewBox="0 0 24 24">
+    <path d="M5 12 L10 17 L19 7" stroke-width="2.2"/>
+  </symbol>
+  <symbol id="a-coins" viewBox="0 0 24 24">
+    <ellipse cx="12" cy="6" rx="7" ry="2.5"/>
+    <ellipse cx="12" cy="12" rx="7" ry="2.5"/>
+    <ellipse cx="12" cy="18" rx="7" ry="2.5"/>
+  </symbol>
+  <symbol id="a-777" viewBox="0 0 24 24">
+    <path d="M4 6 L8 6 L5.5 15 M8 6 L10 6"/>
+    <path d="M10 6 L14 6 L11.5 15 M14 6 L16 6" opacity=".75"/>
+    <path d="M16 6 L20 6 L17.5 15 M20 6 L22 6" opacity=".5"/>
+  </symbol>
+  <symbol id="a-red" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="8" fill="#c8503f" stroke="#c8503f"/>
+  </symbol>
+  <symbol id="a-zero" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="8" fill="#4fa87a" stroke="#4fa87a"/>
+  </symbol>
+  <symbol id="a-elev" viewBox="0 0 24 24">
+    <rect x="5" y="3" width="14" height="18" rx="1.5"/>
+    <path d="M12 3 L12 21" opacity=".4"/>
+    <path d="M8 10 L8 14 M6.5 12.5 L8 11 L9.5 12.5" stroke-width="1.4"/>
+    <path d="M16 10 L16 14 M14.5 11.5 L16 13 L17.5 11.5" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="a-crown" viewBox="0 0 24 24">
+    <path d="M4 8 L7 12 L12 6 L17 12 L20 8 L19 18 L5 18 Z"/>
+    <path d="M5 20 L19 20" opacity=".5"/>
+  </symbol>
+  <symbol id="a-door" viewBox="0 0 24 24">
+    <rect x="6" y="3" width="12" height="18" rx="1"/>
+    <circle cx="15" cy="12" r="1.2" class="fill-fg"/>
+  </symbol>
+  <symbol id="a-broke" viewBox="0 0 24 24">
+    <rect x="3" y="7" width="18" height="12" rx="2"/>
+    <path d="M3 11 L21 11"/>
+    <circle cx="17" cy="15" r="1.3" class="fill-fg"/>
+    <path d="M5 5 L19 21" stroke-width="1.8"/>
+  </symbol>
+
+  <!-- ============ UI ICONS ============ -->
+  <symbol id="u-back" viewBox="0 0 24 24">
+    <path d="M15 5 L8 12 L15 19" stroke-width="2"/>
+  </symbol>
+  <symbol id="u-help" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M9.5 9 Q9.5 6.5 12 6.5 Q14.5 6.5 14.5 9 Q14.5 11 12 11.5 L12 13.5"/>
+    <circle cx="12" cy="16.5" r="1" class="fill-fg"/>
+  </symbol>
+  <symbol id="u-sound-on" viewBox="0 0 24 24">
+    <path d="M4 9 L4 15 L8 15 L13 19 L13 5 L8 9 Z"/>
+    <path d="M16 9 Q18 12 16 15 M19 6 Q22 12 19 18" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="u-sound-off" viewBox="0 0 24 24">
+    <path d="M4 9 L4 15 L8 15 L13 19 L13 5 L8 9 Z"/>
+    <path d="M16 9 L21 15 M21 9 L16 15" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="u-music-on" viewBox="0 0 24 24">
+    <circle cx="7" cy="18" r="2.5"/>
+    <path d="M9.5 18 L9.5 5 L19 3 L19 16"/>
+    <circle cx="16.5" cy="16" r="2.5"/>
+  </symbol>
+  <symbol id="u-music-off" viewBox="0 0 24 24">
+    <circle cx="7" cy="18" r="2.5"/>
+    <path d="M9.5 18 L9.5 5 L19 3 L19 16" opacity=".5"/>
+    <circle cx="16.5" cy="16" r="2.5" opacity=".5"/>
+    <path d="M3 3 L21 21" stroke-width="2"/>
+  </symbol>
+  <symbol id="u-share" viewBox="0 0 24 24">
+    <circle cx="6" cy="12" r="2.5"/>
+    <circle cx="18" cy="6" r="2.5"/>
+    <circle cx="18" cy="18" r="2.5"/>
+    <path d="M8.2 10.8 L15.8 7.2 M8.2 13.2 L15.8 16.8" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="u-lock" viewBox="0 0 24 24">
+    <rect x="5" y="11" width="14" height="10" rx="1.5"/>
+    <path d="M8 11 L8 7 Q8 4 12 4 Q16 4 16 7 L16 11"/>
+    <circle cx="12" cy="16" r="1.2" class="fill-fg"/>
+  </symbol>
+  <symbol id="u-arrow" viewBox="0 0 24 24">
+    <path d="M5 12 L19 12 M14 7 L19 12 L14 17" stroke-width="1.8"/>
+  </symbol>
+</svg>
+
 <canvas id="stars" aria-hidden="true"></canvas>
 <canvas id="confetti" aria-hidden="true"></canvas>
 <div id="app"></div>
@@ -651,8 +918,8 @@ body::before{
 
 <script>
 /* ============================================================================
-   ЛЮКС-7 — РОГАЛИК-КАЗИНО · v2.2
-   Фикс: экран смерти + достижения/рекорды + назад → возврат на экран смерти.
+   ЛЮКС-7 — РОГАЛИК-КАЗИНО · v2.3
+   Единый SVG-иконсет вместо эмодзи.
    ============================================================================ */
 
 /* ------------------------------- УТИЛИТЫ -------------------------------- */
@@ -665,6 +932,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const fmt = n => Math.round(n).toLocaleString('ru-RU');
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 const setText = (sel, v) => { const e = $(sel); if (e) e.textContent = v; };
+
+/* ИКОНКИ — единая точка входа */
+function ico(name, size) {
+  size = size || 20;
+  return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><use href="#${name}"/></svg>`;
+}
 
 /* ------------------------------- ЗВУК ---------------------------------- */
 let AC = null, soundOn = true, musicOn = false;
@@ -706,32 +979,23 @@ function toggleSound() {
   soundOn = !soundOn;
   try { localStorage.setItem('lux7_sound', soundOn ? '1' : '0'); } catch (e) {}
   if (soundOn) { ac(); SFX.chip(); }
-  $$('#sndbtn').forEach(b => { b.textContent = soundOn ? '🔊' : '🔇'; b.classList.toggle('on', soundOn); });
+  $$('#sndbtn').forEach(b => { b.innerHTML = ico(soundOn ? 'u-sound-on' : 'u-sound-off', 18); b.classList.toggle('on', soundOn); });
 }
-
-/* ------------------------------ МУЗЫКА ---------------------------------- */
 let musicNodes = null;
 function startMusic() {
   const c = ac(); if (!c || musicNodes) return;
   try {
     const master = c.createGain();
-    master.gain.value = 0;
-    master.connect(c.destination);
+    master.gain.value = 0; master.connect(c.destination);
     master.gain.linearRampToValueAtTime(0.022, c.currentTime + 2.5);
     const oscs = [];
-    // Медленный амбиент: 3 синуса, каждый со своим медленным LFO
     [110, 164.81, 220].forEach((f, i) => {
       const o = c.createOscillator(), g = c.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
-      g.gain.value = 0.32;
+      o.type = 'sine'; o.frequency.value = f; g.gain.value = 0.32;
       const lfo = c.createOscillator(), lfoGain = c.createGain();
-      lfo.frequency.value = 0.05 + i * 0.02;
-      lfoGain.gain.value = 0.18;
-      lfo.connect(lfoGain); lfoGain.connect(g.gain);
-      lfo.start();
-      o.connect(g); g.connect(master);
-      o.start();
+      lfo.frequency.value = 0.05 + i * 0.02; lfoGain.gain.value = 0.18;
+      lfo.connect(lfoGain); lfoGain.connect(g.gain); lfo.start();
+      o.connect(g); g.connect(master); o.start();
       oscs.push(o, lfo);
     });
     musicNodes = { master, oscs };
@@ -743,10 +1007,7 @@ function stopMusic() {
   try {
     if (c) musicNodes.master.gain.linearRampToValueAtTime(0, c.currentTime + 0.6);
     setTimeout(() => {
-      try {
-        musicNodes.oscs.forEach(o => { try { o.stop(); } catch(e){} });
-        musicNodes.master.disconnect();
-      } catch(e){}
+      try { musicNodes.oscs.forEach(o => { try { o.stop(); } catch(e){} }); musicNodes.master.disconnect(); } catch(e){}
       musicNodes = null;
     }, 700);
   } catch (e) { musicNodes = null; }
@@ -755,7 +1016,7 @@ function toggleMusic() {
   musicOn = !musicOn;
   try { localStorage.setItem('lux7_music', musicOn ? '1' : '0'); } catch (e) {}
   if (musicOn) { ac(); startMusic(); } else { stopMusic(); }
-  $$('#musbtn').forEach(b => { b.textContent = musicOn ? '🎵' : '🎶'; b.classList.toggle('on', musicOn); });
+  $$('#musbtn').forEach(b => { b.innerHTML = ico(musicOn ? 'u-music-on' : 'u-music-off', 18); b.classList.toggle('on', musicOn); });
 }
 
 /* ------------------------------- КОНСТАНТЫ ------------------------------ */
@@ -771,42 +1032,39 @@ const STREAK_BONUS = 0.15;
 const STREAK_MIN   = 3;
 
 const PERKS = [
-  { id:'hot',    icon:'🎰', name:'Горячие барабаны', desc:'Выплаты в Слотах +25%' },
-  { id:'counter',icon:'🧠', name:'Карточный счёт',   desc:'В Хай-Лоу показываются шансы и точный множитель' },
-  { id:'dice',   icon:'🎲', name:'Краплёные кости',  desc:'Один бесплатный переброс за игру в Костях' },
-  { id:'comp',   icon:'🛡️', name:'Комп-карта',       desc:'Один раз за забег спасает от банкротства: даёт 50 фишек' },
-  { id:'ace',    icon:'🃏', name:'Туз в рукаве',     desc:'Блэкджек платит 2:1 вместо 1.5:1' },
-  { id:'whale',  icon:'🐋', name:'Хайроллер',        desc:'Ставки от 100 фишек платят +20% во всех играх' },
-  { id:'lucky',  icon:'🍀', name:'Талисман',         desc:'10% шанс, что проигрышная ставка вернётся' },
-  { id:'key',    icon:'🔑', name:'Скелетный ключ',   desc:'Лифт стоит на 30% дешевле' },
+  { id:'hot',    icon:'p-hot',     name:'Горячие барабаны', desc:'Выплаты в Слотах +25%' },
+  { id:'counter',icon:'p-counter', name:'Карточный счёт',   desc:'В Хай-Лоу показываются шансы и точный множитель' },
+  { id:'dice',   icon:'p-cheat',   name:'Краплёные кости',  desc:'Один бесплатный переброс за игру в Костях' },
+  { id:'comp',   icon:'p-comp',    name:'Комп-карта',       desc:'Один раз за забег спасает от банкротства: даёт 50 фишек' },
+  { id:'ace',    icon:'p-ace',     name:'Туз в рукаве',     desc:'Блэкджек платит 2:1 вместо 1.5:1' },
+  { id:'whale',  icon:'p-whale',   name:'Хайроллер',        desc:'Ставки от 100 фишек платят +20% во всех играх' },
+  { id:'lucky',  icon:'p-lucky',   name:'Талисман',         desc:'10% шанс, что проигрышная ставка вернётся' },
+  { id:'key',    icon:'p-key',     name:'Скелетный ключ',   desc:'Лифт стоит на 30% дешевле' },
 ];
 const CURSES = [
-  { id:'heavy', icon:'🌫️', name:'Тяжёлый воздух',  desc:'Все выплаты −10%' },
-  { id:'tax',   icon:'💸', name:'Налог жадности',   desc:'Лифт стоит +50%' },
-  { id:'blood', icon:'🩸', name:'Кровавый сбор',    desc:'−5% фишек при входе на этаж' },
-  { id:'skull', icon:'👁️', name:'Наблюдатель',      desc:'Черепа на барабанах выпадают вдвое чаще' },
-  { id:'cold',  icon:'🧊', name:'Холодная колода',  desc:'Хай-Лоу: ничья сжигает банк' },
-  { id:'dry',   icon:'🚱', name:'Сухой закон',      desc:'Перки не работают на этом этаже' },
+  { id:'heavy', icon:'c-heavy', name:'Тяжёлый воздух',  desc:'Все выплаты −10%' },
+  { id:'tax',   icon:'c-tax',   name:'Налог жадности',   desc:'Лифт стоит +50%' },
+  { id:'blood', icon:'c-blood', name:'Кровавый сбор',    desc:'−5% фишек при входе на этаж' },
+  { id:'skull', icon:'c-skull', name:'Наблюдатель',      desc:'Черепа на барабанах выпадают вдвое чаще' },
+  { id:'cold',  icon:'c-cold',  name:'Холодная колода',  desc:'Хай-Лоу: ничья сжигает банк' },
+  { id:'dry',   icon:'c-dry',   name:'Сухой закон',      desc:'Перки не работают на этом этаже' },
 ];
 const CLASSES = [
-  { id:'counter', icon:'🎓', name:'Считающий',
+  { id:'counter', icon:'k-scholar', name:'Считающий',
     desc:'Умный игрок. Начинает с перком «Карточный счёт». Блэкджек платит +5%.',
-    perk:'counter',
-    mods:{ bjBonus:0.05 } },
-  { id:'fortune', icon:'🍀', name:'Фортуна',
+    perk:'counter', mods:{ bjBonus:0.05 } },
+  { id:'fortune', icon:'p-lucky', name:'Фортуна',
     desc:'Родился в рубашке. Начинает с перком «Талисман». Шанс проклятия −25%.',
-    perk:'lucky',
-    mods:{ curseResist:0.25 } },
-  { id:'rush',    icon:'🔥', name:'Рисковый',
+    perk:'lucky', mods:{ curseResist:0.25 } },
+  { id:'rush',    icon:'p-hot', name:'Рисковый',
     desc:'Играет по-крупному. Все выплаты ×1.15, но лифт на 20% дороже.',
-    perk:null,
-    mods:{ allPay:1.15, liftCost:1.2 } },
+    perk:null, mods:{ allPay:1.15, liftCost:1.2 } },
 ];
 const SHOP_ITEMS = [
-  { id:'purge',  icon:'✂️', name:'Снять проклятие', desc:'Убирает проклятие текущего этажа', price:200, once:true },
-  { id:'random', icon:'🎁', name:'Случайный перк',  desc:'Перк из оставшихся в пуле',        price:400, once:true },
-  { id:'ward',   icon:'🔮', name:'Оберег',          desc:'Следующий этаж без проклятия',    price:80,  once:true },
-  { id:'heal',   icon:'💊', name:'Страховка',       desc:'+40 фишек',                        price:30,  once:true },
+  { id:'purge',  icon:'s-purge', name:'Снять проклятие', desc:'Убирает проклятие текущего этажа', price:200, once:true },
+  { id:'random', icon:'s-gift',  name:'Случайный перк',  desc:'Перк из оставшихся в пуле',        price:400, once:true },
+  { id:'ward',   icon:'s-ward',  name:'Оберег',          desc:'Следующий этаж без проклятия',    price:80,  once:true },
+  { id:'heal',   icon:'s-heal',  name:'Страховка',       desc:'+40 фишек',                        price:30,  once:true },
 ];
 const SLOT_SYMBOLS = [
   { id:'cherry', icon:'🍒', w:8, pay:7  },
@@ -835,27 +1093,27 @@ const ROULETTE_BETS = [
   { id:'d3',    label:'3-я дюжина',  cls:'',      pay:3, test:n => n >= 25 && n <= 36 },
 ];
 const ACHIEVEMENTS = [
-  { id:'first_win',   icon:'🎉', name:'Первая кровь',       desc:'Выиграть первую ставку' },
-  { id:'streak_3',    icon:'🔥', name:'В ударе',            desc:'3 победы подряд' },
-  { id:'streak_5',    icon:'⚡', name:'Серия',              desc:'5 побед подряд' },
-  { id:'big_win',     icon:'💰', name:'Жирный куш',         desc:'Выиграть 500+ за одну ставку' },
-  { id:'jackpot',     icon:'7️⃣', name:'777',                desc:'Три семёрки в слотах' },
-  { id:'all_skulls',  icon:'💀', name:'Поцелуй смерти',     desc:'Поймать три черепа в слотах' },
-  { id:'bj_natural',  icon:'🃏', name:'Натурал',            desc:'Собрать блэкджек с раздачи' },
-  { id:'roulette_red',icon:'🔴', name:'Красное',            desc:'Выиграть на красном в рулетке' },
-  { id:'roulette_zero',icon:'🟢',name:'Зеро',               desc:'Увидеть зеро в рулетке' },
-  { id:'whale',       icon:'🐋', name:'Кит',                desc:'Поставить 1000+ за один раз' },
-  { id:'floors_5',    icon:'🛗', name:'Полпути',            desc:'Добраться до 5 этажа' },
-  { id:'floors_10',   icon:'🏆', name:'Вершина',            desc:'Добраться до 10 этажа' },
-  { id:'escape',      icon:'🚪', name:'Свобода',            desc:'Выйти из казино живым' },
-  { id:'broke',       icon:'💸', name:'На мели',            desc:'Проиграть всё до 10 фишек' },
+  { id:'first_win',   icon:'a-check', name:'Первая кровь',   desc:'Выиграть первую ставку' },
+  { id:'streak_3',    icon:'p-hot',   name:'В ударе',        desc:'3 победы подряд' },
+  { id:'streak_5',    icon:'p-hot',   name:'Серия',          desc:'5 побед подряд' },
+  { id:'big_win',     icon:'a-coins', name:'Жирный куш',     desc:'Выиграть 500+ за одну ставку' },
+  { id:'jackpot',     icon:'a-777',   name:'777',            desc:'Три семёрки в слотах' },
+  { id:'all_skulls',  icon:'c-skull', name:'Поцелуй смерти', desc:'Поймать три черепа в слотах' },
+  { id:'bj_natural',  icon:'p-ace',   name:'Натурал',        desc:'Собрать блэкджек с раздачи' },
+  { id:'roulette_red',icon:'a-red',   name:'Красное',        desc:'Выиграть на красном в рулетке' },
+  { id:'roulette_zero',icon:'a-zero', name:'Зеро',           desc:'Увидеть зеро в рулетке' },
+  { id:'whale',       icon:'p-whale', name:'Кит',            desc:'Поставить 1000+ за один раз' },
+  { id:'floors_5',    icon:'a-elev',  name:'Полпути',        desc:'Добраться до 5 этажа' },
+  { id:'floors_10',   icon:'a-crown', name:'Вершина',        desc:'Добраться до 10 этажа' },
+  { id:'escape',      icon:'a-door',  name:'Свобода',        desc:'Выйти из казино живым' },
+  { id:'broke',       icon:'a-broke', name:'На мели',        desc:'Проиграть всё до 10 фишек' },
 ];
 const LIFT_EVENTS = [
-  { icon:'🎁', name:'Найдена фишка',   desc:'Кто-то обронил у лифта',       chips:30,  weight:5 },
-  { icon:'🎰', name:'Фриспин-бонус',   desc:'Автомат выдал премию',         chips:45,  weight:4 },
-  { icon:'💎', name:'Чип под столом',  desc:'Редкая удача',                 chips:120, weight:2 },
-  { icon:'🍸', name:'На чай от бара',  desc:'Официант расщедрился',         chips:20,  weight:5 },
-  { icon:'🎩', name:'Чаевые крупье',   desc:'Крупье помнит вас',            chips:70,  weight:3 },
+  { name:'Найдена фишка',  desc:'Кто-то обронил у лифта', chips:30,  weight:5 },
+  { name:'Фриспин-бонус',  desc:'Автомат выдал премию',     chips:45,  weight:4 },
+  { name:'Чип под столом', desc:'Редкая удача',             chips:120, weight:2 },
+  { name:'На чай от бара', desc:'Официант расщедрился',     chips:20,  weight:5 },
+  { name:'Чаевые крупье',  desc:'Крупье помнит вас',        chips:70,  weight:3 },
 ];
 
 /* -------------------------------- СОСТОЯНИЕ ----------------------------- */
@@ -883,7 +1141,7 @@ function unlockAch(id) {
   const a = ACHIEVEMENTS.find(x => x.id === id);
   if (!a) return;
   setTimeout(() => {
-    toast(`🏅 ${a.icon} ${a.name}`, 'ach');
+    toast('Достижение: ' + a.name, 'ach', a.icon);
     SFX.ach();
     confettiBurst(35);
   }, 500);
@@ -942,8 +1200,7 @@ function themeForFloor(f) {
   return 'royal';
 }
 function applyTheme() {
-  const f = S ? S.floor : 1;
-  document.body.dataset.theme = themeForFloor(f);
+  document.body.dataset.theme = themeForFloor(S ? S.floor : 1);
 }
 
 /* ------------------------------ МОДИФИКАТОРЫ ---------------------------- */
@@ -969,7 +1226,7 @@ function modMult(game) {
 }
 function rollCurse() {
   if (S.floor === 1) { S.curse = null; return; }
-  if (S.warded) { S.warded = false; S.curse = null; toast('🔮 Оберег поглотил проклятие', 'good'); return; }
+  if (S.warded) { S.warded = false; S.curse = null; toast('Оберег поглотил проклятие', 'good', 's-ward'); return; }
   const resist = classMods().curseResist || 0;
   const chance = 0.58 * (1 - resist);
   S.curse = Math.random() < chance ? pick(CURSES) : null;
@@ -1019,7 +1276,7 @@ function syncBetUI() {
       hb.style.display = 'flex';
       const on = S.bet >= 100;
       hb.classList.toggle('on', on);
-      hb.textContent = on ? '🐋 Хайроллер активен · +20%' : '🐋 Хайроллер: нужна ставка 100+';
+      hb.innerHTML = ico('p-whale', 14) + (on ? ' Хайроллер активен · +20%' : ' Хайроллер: нужна ставка 100+');
     } else hb.style.display = 'none';
   }
   refreshActionLabels();
@@ -1050,15 +1307,17 @@ function quickBet(mode) {
 function refreshActionLabels() {
   $$('.js-betbtn').forEach(b => {
     if (b.disabled) return;
-    b.textContent = (b.dataset.label || 'Играть') + ' · ' + fmt(S.bet);
+    const label = b.dataset.label || 'Играть';
+    b.innerHTML = label + ' · ' + fmt(S.bet);
   });
 }
 
 /* ------------------------------ ТОСТЫ / ЭФФЕКТЫ ------------------------- */
-function toast(msg, type) {
+function toast(msg, type, iconName) {
   const t = document.createElement('div');
   t.className = 'toast' + (type ? ' ' + type : '');
-  t.textContent = msg;
+  if (iconName) t.innerHTML = ico(iconName, 16) + '<span>' + msg + '</span>';
+  else t.textContent = msg;
   $('#toasts').appendChild(t);
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 1700);
 }
@@ -1111,14 +1370,14 @@ function registerWin(net) {
   if (S.winStreak >= 5) unlockAch('streak_5');
   if (net >= 500) unlockAch('big_win');
   if (S.winStreak === STREAK_MIN) {
-    setTimeout(() => toast('🔥 Серия ' + S.winStreak + '! Бонус +15% к выплатам', 'gold'), 400);
+    setTimeout(() => toast('Серия ' + S.winStreak + '! Бонус +15% к выплатам', 'gold', 'p-hot'), 400);
   }
 }
 function registerLoss() { S.winStreak = 0; }
 function onLose(bet) {
   if (hasPerk('lucky') && Math.random() < 0.10) {
     if (bet > 0) S.chips += bet;
-    toast('🍀 Талисман вернул ставку!', 'good');
+    toast('Талисман вернул ставку', 'good', 'p-lucky');
     return true;
   }
   return false;
@@ -1127,7 +1386,7 @@ function checkBroke() {
   if (S.chips >= MIN_BET) return false;
   if (hasPerk('comp') && !S.compUsed) {
     S.compUsed = true; S.chips = 50;
-    toast('🛡️ Комп-карта спасла забег: +50 фишек', 'gold');
+    toast('Комп-карта спасла забег: +50 фишек', 'gold', 'p-comp');
     SFX.big();
     return false;
   }
@@ -1155,14 +1414,14 @@ function chipCoinSVG() {
 }
 function header() {
   const curseBadge = (S.curse && S.screen === 'hub')
-    ? `<div class="badge curse" onclick="showCurseInfo()">${S.curse.icon} ${S.curse.name}</div>` : '';
+    ? `<div class="badge curse" onclick="showCurseInfo()">${ico(S.curse.icon, 12)}<span>${S.curse.name}</span></div>` : '';
   return `
   <div class="hdr">
     <div class="hdr-title serif">Люкс-7<small>Этаж ${S.floor} / ${MAX_FLOOR}</small></div>
     ${curseBadge}
-    <button class="icon-btn ${musicOn ? 'on' : ''}" id="musbtn" onclick="toggleMusic()" title="Музыка">${musicOn ? '🎵' : '🎶'}</button>
-    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()" title="Звук">${soundOn ? '🔊' : '🔇'}</button>
-    <button class="icon-btn" onclick="showHelp()" title="Помощь">?</button>
+    <button class="icon-btn ${musicOn ? 'on' : ''}" id="musbtn" onclick="toggleMusic()" title="Музыка">${ico(musicOn ? 'u-music-on' : 'u-music-off', 18)}</button>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()" title="Звук">${ico(soundOn ? 'u-sound-on' : 'u-sound-off', 18)}</button>
+    <button class="icon-btn" onclick="showHelp()" title="Помощь">${ico('u-help', 18)}</button>
   </div>`;
 }
 function chipBar() {
@@ -1180,20 +1439,20 @@ function chipBar() {
       </div>
     </div>
     <div class="badgerow">
-      ${S.cls ? `<div class="badge cls">${S.cls.icon} ${S.cls.name}</div>` : ''}
-      ${streakOn ? `<div class="badge fire">🔥 ×${(1+STREAK_BONUS).toFixed(2)}</div>` : ''}
-      ${veryLow ? `<div class="badge low">⚠ последний шанс</div>` : ''}
-      ${low ? `<div class="badge low">💀 финал</div>` : `<div class="badge good ${S.chips >= anteCost() ? 'pulse' : ''}" id="liftbadge">Лифт: ${fmt(anteCost())}</div>`}
+      ${S.cls ? `<div class="badge cls">${ico(S.cls.icon, 12)}<span>${S.cls.name}</span></div>` : ''}
+      ${streakOn ? `<div class="badge fire">${ico('p-hot', 12)}<span>×${(1+STREAK_BONUS).toFixed(2)}</span></div>` : ''}
+      ${veryLow ? `<div class="badge low">${ico('c-skull', 12)}<span>последний шанс</span></div>` : ''}
+      ${low ? `<div class="badge low">${ico('c-skull', 12)}<span>финал</span></div>` : `<div class="badge good ${S.chips >= anteCost() ? 'pulse' : ''}" id="liftbadge">Лифт: ${fmt(anteCost())}</div>`}
     </div>
   </div>`;
 }
 function gameHeader(title, sub) {
   return `
   <div class="hdr">
-    <button class="icon-btn" onclick="goHub()">←</button>
+    <button class="icon-btn" onclick="goHub()">${ico('u-back', 18)}</button>
     <div class="hdr-title serif" style="font-size:14px">${title}<small>${sub}</small></div>
-    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
-    <button class="icon-btn" onclick="showHelp()">?</button>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${ico(soundOn ? 'u-sound-on' : 'u-sound-off', 18)}</button>
+    <button class="icon-btn" onclick="showHelp()">${ico('u-help', 18)}</button>
   </div>`;
 }
 function betBox() {
@@ -1220,7 +1479,7 @@ function betBox() {
       <button class="gold" onclick="quickBet('all')">ВСЁ</button>
     </div>
     <div class="hrbadge ${hrOn ? 'on' : ''}" id="hrbadge" style="${hasPerk('whale') ? 'display:flex' : 'display:none'}">
-      ${hrOn ? '🐋 Хайроллер активен · +20%' : '🐋 Хайроллер: нужна ставка 100+'}
+      ${ico('p-whale', 14)} ${hrOn ? '<span>Хайроллер активен · +20%</span>' : '<span>Хайроллер: нужна ставка 100+</span>'}
     </div>
   </div>`;
 }
@@ -1265,8 +1524,8 @@ function classScreen() {
   return `
   <div class="hdr">
     <div class="hdr-title serif" style="font-size:14px">Люкс-7<small>Выбор класса</small></div>
-    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
-    <button class="icon-btn" onclick="showHelp()">?</button>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${ico(soundOn ? 'u-sound-on' : 'u-sound-off', 18)}</button>
+    <button class="icon-btn" onclick="showHelp()">${ico('u-help', 18)}</button>
   </div>
   <div class="pad" style="padding-top:8px">
     <div style="font-family:Georgia,serif;font-size:24px;color:var(--gold2);letter-spacing:.08em;text-align:center;margin:14px 0 6px">Кто вы сегодня?</div>
@@ -1275,10 +1534,12 @@ function classScreen() {
     </div>
     ${CLASSES.map(c => `
       <div class="class-card" onclick="pickClass('${c.id}')">
-        <div class="ci">${c.icon}</div>
-        <div class="cn">${c.name}</div>
-        <div class="cd">${c.desc}</div>
-        <div class="cb">${c.perk ? 'Стартовый перк: ' + (PERKS.find(p => p.id === c.perk) || {}).name : 'Без стартового перка'}</div>
+        <div class="ci">${ico(c.icon, 38)}</div>
+        <div>
+          <div class="cn">${c.name}</div>
+          <div class="cd">${c.desc}</div>
+          <div class="cb" style="margin-top:10px">${c.perk ? ico('p-ace', 13) + 'Стартовый перк: ' + (PERKS.find(p => p.id === c.perk) || {}).name : 'Без стартового перка'}</div>
+        </div>
       </div>`).join('')}
   </div>
   <div class="bottom">
@@ -1295,7 +1556,7 @@ function pickClass(id) {
   S.screen = 'hub';
   SFX.big(); buzz(30);
   render();
-  toast(`${c.icon} ${c.name}`, 'gold');
+  toast(c.name, 'gold', c.icon);
 }
 
 /* ================================ ХАБ ================================== */
@@ -1305,8 +1566,8 @@ function hubScreen() {
   const isExit = S.floor >= MAX_FLOOR;
   const curse = S.curse
     ? `<div class="card" style="margin:10px 0 0;border-color:#5c2a22;background:#1c1210">
-         <div style="display:flex;gap:11px;align-items:center">
-           <div style="font-size:24px">${S.curse.icon}</div>
+         <div style="display:flex;gap:12px;align-items:center">
+           <div style="color:#e08a76;display:flex">${ico(S.curse.icon, 26)}</div>
            <div><div style="font-weight:700;color:#e08a76;font-size:13px">${S.curse.name}</div>
            <div style="font-size:11.5px;color:var(--mut);margin-top:2px">${S.curse.desc}</div></div>
          </div></div>` : '';
@@ -1314,19 +1575,19 @@ function hubScreen() {
     ? `<div class="sect" style="padding:0">Ваши перки (${S.perks.length})</div>
        <div class="perk-list" style="padding:0">${S.perks.map(id => {
           const p = PERKS.find(x => x.id === id);
-          return `<div class="pchip">${p.icon} ${p.name}</div>`;
+          return `<div class="pchip">${ico(p.icon, 13)}<span>${p.name}</span></div>`;
        }).join('')}</div>` : '';
   const lowWarn = S.chips < MIN_BET * 3 && S.chips >= MIN_BET
     ? `<div class="card" style="margin:10px 0 0;border-color:#7a352a;background:#2a1411;animation:dangerPulse 1.4s ease-in-out infinite">
-         <div style="display:flex;gap:11px;align-items:center">
-           <div style="font-size:22px">⚠️</div>
+         <div style="display:flex;gap:12px;align-items:center">
+           <div style="color:#e08a76;display:flex">${ico('c-skull', 22)}</div>
            <div><div style="font-weight:700;color:#e08a76;font-size:13px">На грани</div>
            <div style="font-size:11.5px;color:var(--mut);margin-top:2px">Меньше ${MIN_BET * 3} фишек. Опуститесь ниже ${MIN_BET} — и забег закончится.</div></div>
          </div></div>` : '';
   const clsRow = S.cls
     ? `<div class="card" style="margin:10px 0 0;border-color:#2a3d5c;background:#12192a">
-         <div style="display:flex;gap:11px;align-items:center">
-           <div style="font-size:24px">${S.cls.icon}</div>
+         <div style="display:flex;gap:12px;align-items:center">
+           <div style="color:#9bbaf5;display:flex">${ico(S.cls.icon, 26)}</div>
            <div><div style="font-weight:700;color:#9bbaf5;font-size:13px">${S.cls.name}</div>
            <div style="font-size:11.5px;color:var(--mut);margin-top:2px">${S.cls.desc}</div></div>
          </div></div>` : '';
@@ -1341,18 +1602,18 @@ function hubScreen() {
   </div>
   <div class="sect pad" style="padding:0 14px">Игровые столы</div>
   <div class="grid">
-    ${gcard('blackjack', '🃏', 'Блэкджек', 'Минимальный риск.<br>Дилер стоит на 17.', '~99%', '1')}
-    ${gcard('roulette', '🎡', 'Рулетка', 'Европейская, одно зеро.<br>Дюжины платят ×3.', '~97%', '2')}
-    ${gcard('dice', '🎲', 'Кости', 'Ставь на больше/меньше.<br>Сам выбираешь риск.', '~96%', '3')}
-    ${gcard('highlow', '🂡', 'Хай-Лоу', 'Угадай карту. Удваивай<br>и вовремя забирай.', '~95%', '4')}
-    ${gcard('slots', '🎰', 'Слоты', 'Редкие, но огромные<br>выплаты. До 80×.', '~95%', '5')}
-    ${gcard('records', '🏆', 'Рекорды', 'Топ-5 забегов<br>и статистика.', '—', 'R')}
-    ${gcard('ach', '🏅', 'Достижения', ACH.size + ' / ' + ACHIEVEMENTS.length + ' открыто.<br>Собери все.', '—', 'A')}
+    ${gcard('blackjack', 'g-bj', 'Блэкджек', 'Минимальный риск.<br>Дилер стоит на 17.', '~99%', '1')}
+    ${gcard('roulette', 'g-roulette', 'Рулетка', 'Европейская, одно зеро.<br>Дюжины платят ×3.', '~97%', '2')}
+    ${gcard('dice', 'g-dice', 'Кости', 'Ставь на больше/меньше.<br>Сам выбираешь риск.', '~96%', '3')}
+    ${gcard('highlow', 'g-hl', 'Хай-Лоу', 'Угадай карту. Удваивай<br>и вовремя забирай.', '~95%', '4')}
+    ${gcard('slots', 'g-slots', 'Слоты', 'Редкие, но огромные<br>выплаты. До 80×.', '~95%', '5')}
+    ${gcard('records', 'a-crown', 'Рекорды', 'Топ-5 забегов<br>и статистика.', '—', 'R')}
+    ${gcard('ach', 'a-check', 'Достижения', ACH.size + ' / ' + ACHIEVEMENTS.length + ' открыто.<br>Собери все.', '—', 'A')}
   </div>
   <div class="bottom">
     <button class="btn ${isExit ? 'grn' : ''} ${canLift && !isExit ? 'pulse' : ''}"
             onclick="takeElevator()" ${canLift ? '' : 'disabled'}>
-      ${isExit ? '🚪 Выйти из казино' : '🛗 Лифт на этаж ' + (S.floor + 1)} · ${fmt(cost)}
+      ${isExit ? 'Выйти из казино' : 'Лифт на этаж ' + (S.floor + 1)} · ${fmt(cost)}
     </button>
     ${canLift ? '' : `<div style="text-align:center;font-size:11.5px;color:#e08a76;margin-top:9px">Не хватает ${fmt(cost - S.chips)} фишек — играй!</div>`}
   </div>`;
@@ -1360,7 +1621,7 @@ function hubScreen() {
 function gcard(id, icon, name, desc, ev, kb) {
   return `<div class="gcard" onclick="go('${id}')">
     <div class="ev ${ev.startsWith('~9') ? '' : 'hot'}">${ev}</div>
-    <span class="gi">${icon}</span>
+    <span class="gi">${ico(icon, 40)}</span>
     <div class="gn">${name}</div>
     <div class="gd">${desc}</div>
     ${kb ? `<div class="kb">${kb}</div>` : ''}
@@ -1397,7 +1658,6 @@ function takeElevator() {
   const app = $('#app');
   if (app) { app.classList.remove('anim-lift'); void app.offsetWidth; app.classList.add('anim-lift'); }
 
-  // Смена этажа
   S.floor++;
   S.stats.floors = S.floor;
   if (S.floor >= 5) unlockAch('floors_5');
@@ -1406,7 +1666,6 @@ function takeElevator() {
   applyTheme();
   rollCurse();
 
-  // Случайное событие
   if (Math.random() < 0.25) {
     const total = LIFT_EVENTS.reduce((s, e) => s + e.weight, 0);
     let r = Math.random() * total;
@@ -1415,25 +1674,22 @@ function takeElevator() {
     S.chips += ev.chips;
     if (S.chips > S.peak) S.peak = S.chips;
     setTimeout(() => {
-      toast(`${ev.icon} ${ev.name}: +${ev.chips} фишек`, 'gold');
+      toast(ev.name + ': +' + ev.chips + ' фишек', 'gold', 's-gift');
       SFX.event();
       confettiBurst(30);
     }, 620);
   }
 
-  // Кровавый сбор
   if (S.curse && S.curse.id === 'blood') {
     const loss = Math.round(S.chips * 0.05);
     S.chips = Math.max(0, S.chips - loss);
-    toast(`🩸 Кровавый сбор: −${fmt(loss)}`, 'bad');
+    toast('Кровавый сбор: −' + fmt(loss), 'bad', 'c-blood');
   }
 
   if (checkBroke()) return;
 
-  // Готовим магазин
   S._shopItems = SHOP_ITEMS.map(it => ({...it, bought:false}));
 
-  // Идём к перкам или сразу в магазин
   const avail = PERKS.filter(p => !S.perks.includes(p.id));
   if (avail.length > 0) {
     S._perkChoices = shuffle(avail).slice(0, 3);
@@ -1442,15 +1698,15 @@ function takeElevator() {
     S.screen = 'shop';
   }
   render();
-  if (S.curse) setTimeout(() => toast(`${S.curse.icon} ${S.curse.name}: ${S.curse.desc}`, 'bad'), 900);
+  if (S.curse) setTimeout(() => toast(S.curse.name + ': ' + S.curse.desc, 'bad', S.curse.icon), 900);
 }
 function perksScreen() {
   const choices = S._perkChoices || [];
   return `
   <div class="hdr">
     <div class="hdr-title serif" style="font-size:14px">Этаж ${S.floor}<small>Выберите один перк</small></div>
-    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
-    <button class="icon-btn" onclick="showHelp()">?</button>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${ico(soundOn ? 'u-sound-on' : 'u-sound-off', 18)}</button>
+    <button class="icon-btn" onclick="showHelp()">${ico('u-help', 18)}</button>
   </div>
   <div class="chipbar">
     <div class="chip-display">
@@ -1464,7 +1720,7 @@ function perksScreen() {
     </div>
     ${choices.map(p => `
       <div class="perk" onclick="choosePerk('${p.id}')">
-        <div class="pi">${p.icon}</div>
+        <div class="pi">${ico(p.icon, 28)}</div>
         <div><div class="pn">${p.name}</div><div class="pd">${p.desc}</div></div>
       </div>`).join('')}
   </div>`;
@@ -1472,7 +1728,7 @@ function perksScreen() {
 function choosePerk(id) {
   S.perks.push(id);
   const p = PERKS.find(x => x.id === id);
-  toast(`${p.icon} ${p.name}`, 'gold');
+  toast(p.name, 'gold', p.icon);
   SFX.big(); buzz(25);
   S.screen = 'shop';
   render();
@@ -1483,9 +1739,9 @@ function shopScreen() {
   const availPerks = PERKS.filter(p => !S.perks.includes(p.id)).length;
   return `
   <div class="hdr">
-    <div class="hdr-title serif" style="font-size:14px">🛒 Магазин<small>Этаж ${S.floor} · потратьте фишки</small></div>
-    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${soundOn ? '🔊' : '🔇'}</button>
-    <button class="icon-btn" onclick="showHelp()">?</button>
+    <div class="hdr-title serif" style="font-size:14px">Магазин<small>Этаж ${S.floor} · потратьте фишки</small></div>
+    <button class="icon-btn ${soundOn ? 'on' : ''}" id="sndbtn" onclick="toggleSound()">${ico(soundOn ? 'u-sound-on' : 'u-sound-off', 18)}</button>
+    <button class="icon-btn" onclick="showHelp()">${ico('u-help', 18)}</button>
   </div>
   <div class="chipbar">
     <div class="chip-display">
@@ -1504,26 +1760,25 @@ function shopScreen() {
       const canAfford = S.chips >= it.price;
       return `
         <div class="shop-item ${it.bought ? 'bought' : ''} ${disabled ? 'disabled' : ''}">
-          <div class="si">${it.icon}</div>
+          <div class="si">${ico(it.icon, 28)}</div>
           <div style="min-width:0;flex:1">
             <div class="sn">${it.name}</div>
             <div class="sd">${it.desc}${extra}</div>
           </div>
           <button class="sp" ${it.bought || disabled || !canAfford ? 'disabled' : ''} onclick="buyShopItem(${i})">
-            ${it.bought ? '✓ Куплено' : fmt(it.price)}
+            ${it.bought ? ico('a-check', 14) + '<span>Куплено</span>' : fmt(it.price)}
           </button>
         </div>`;
     }).join('')}
   </div>
   <div class="bottom">
-    <button class="btn" onclick="leaveShop()">Дальше → к столам</button>
+    <button class="btn" onclick="leaveShop()">Дальше, к столам ${ico('u-arrow', 16)}</button>
   </div>`;
 }
 function buyShopItem(i) {
   const it = S._shopItems[i];
   if (!it || it.bought) return;
   if (S.chips < it.price) { toast('Недостаточно фишек', 'bad'); return; }
-  // проверка на снятие проклятия
   if (it.id === 'purge' && !S.curse) { toast('Нечего снимать', 'bad'); return; }
   if (it.id === 'random' && PERKS.every(p => S.perks.includes(p.id))) { toast('Все перки уже есть', 'bad'); return; }
   S.chips -= it.price;
@@ -1536,25 +1791,25 @@ function buyShopItem(i) {
 function applyShopEffect(id) {
   if (id === 'purge') {
     S.curse = null;
-    toast('✂️ Проклятие снято', 'good');
+    toast('Проклятие снято', 'good', 's-purge');
     SFX.big();
   } else if (id === 'random') {
     const avail = PERKS.filter(p => !S.perks.includes(p.id));
     if (avail.length) {
       const p = pick(avail);
       S.perks.push(p.id);
-      toast(`🎁 Получен перк: ${p.icon} ${p.name}`, 'gold');
+      toast('Получен перк: ' + p.name, 'gold', p.icon);
       SFX.big();
       confettiBurst(40);
     }
   } else if (id === 'ward') {
     S.warded = true;
-    toast('🔮 Оберег установлен', 'good');
+    toast('Оберег установлен', 'good', 's-ward');
     SFX.event();
   } else if (id === 'heal') {
     S.chips += 40;
     if (S.chips > S.peak) S.peak = S.chips;
-    toast('💊 +40 фишек', 'good');
+    toast('+40 фишек', 'good', 's-heal');
     animateChips('up');
   }
 }
@@ -1578,6 +1833,19 @@ let diceState = null;
 let hlState = null;
 let bjState = null;
 let rouState = null;
+
+/* Кастомные мини-иконки для барабанов — цветные квадраты с символами */
+const SLOT_ICONS = {
+  cherry: `<svg viewBox="0 0 24 24" width="44" height="44"><circle cx="9" cy="16" r="4" fill="#c8503f"/><circle cx="17" cy="17" r="3.5" fill="#e0503f"/><path d="M9 12 Q9 6 15 6 M17 13 Q17 8 20 7" stroke="#4fa87a" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M14 6 Q16 5 18 6" stroke="#4fa87a" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`,
+  lemon: `<svg viewBox="0 0 24 24" width="44" height="44"><ellipse cx="12" cy="12" rx="9" ry="7" fill="#e8bd63" stroke="#8a5f18" stroke-width="1.2"/><ellipse cx="12" cy="12" rx="7" ry="5" fill="#f7dc85" stroke="none"/><path d="M4 7 Q3 5 4 4 M20 7 Q21 5 20 4" stroke="#8a5f18" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`,
+  bell: `<svg viewBox="0 0 24 24" width="44" height="44"><path d="M6 16 Q6 8 12 8 Q18 8 18 16 Z" fill="#d9a441" stroke="#6b4a12" stroke-width="1.2" stroke-linejoin="round"/><rect x="5" y="16" width="14" height="2" rx="1" fill="#6b4a12" stroke="none"/><circle cx="12" cy="6" r="2" fill="#f2c96b" stroke="#6b4a12" stroke-width="1.2"/><path d="M12 20 Q10 22 12 22 Q14 22 12 20" fill="#6b4a12" stroke="none"/></svg>`,
+  gem: `<svg viewBox="0 0 24 24" width="44" height="44"><path d="M12 3 L20 9 L12 21 L4 9 Z" fill="#5b8dd9" stroke="#2a4d80" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 3 L16 9 L12 21 L8 9 Z" fill="#7fa8f0" stroke="none"/><path d="M4 9 L20 9" stroke="#2a4d80" stroke-width="1" fill="none"/></svg>`,
+  seven: `<svg viewBox="0 0 24 24" width="44" height="44"><text x="12" y="21" text-anchor="middle" font-size="22" font-weight="900" fill="#c8503f" font-family="Georgia,serif" stroke="#7a2018" stroke-width="0.4">7</text></svg>`,
+  skull: `<svg viewBox="0 0 24 24" width="44" height="44"><path d="M6 10 Q6 3 12 3 Q18 3 18 10 Q18 13 16 14 L16 18 L8 18 L8 14 Q6 13 6 10 Z" fill="#e8e0cd" stroke="#4a3a24" stroke-width="1.3" stroke-linejoin="round"/><circle cx="9.5" cy="11" r="1.8" fill="#1a150f"/><circle cx="14.5" cy="11" r="1.8" fill="#1a150f"/><path d="M10.5 15 L13.5 15" stroke="#4a3a24" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>`,
+};
+function slotIconHTML(sym) {
+  return SLOT_ICONS[sym.id] || `<span style="font-size:32px">${sym.icon}</span>`;
+}
 
 function initGame(id) {
   busy = false;
@@ -1603,18 +1871,18 @@ function initGame(id) {
 /* ================================ СЛОТЫ ================================ */
 function slotsScreen() {
   return `
-  ${gameHeader('🎰 Слоты', 'Выплаты до 80×')}
+  ${gameHeader('Слоты', 'Выплаты до 80×')}
   ${chipBar()}
   ${betBox()}
   <div class="stage" id="slotstage">
     <div class="reels">
-      <div class="reel" id="r0">${slotReels[0].icon}</div>
-      <div class="reel" id="r1">${slotReels[1].icon}</div>
-      <div class="reel" id="r2">${slotReels[2].icon}</div>
+      <div class="reel" id="r0">${slotIconHTML(slotReels[0])}</div>
+      <div class="reel" id="r1">${slotIconHTML(slotReels[1])}</div>
+      <div class="reel" id="r2">${slotIconHTML(slotReels[2])}</div>
     </div>
     <div class="msg ${slotMsgType}" id="slotmsg">${slotMsg}</div>
     <div class="paytable">
-      ${SLOT_SYMBOLS.map(s => `<span>${s.icon} ${s.pay > 0 ? '×' + s.pay : '−2×'}</span>`).join('')}
+      ${SLOT_SYMBOLS.map(s => `<span>${SLOT_ICONS[s.id] ? SLOT_ICONS[s.id].replace('width="44" height="44"', 'width="14" height="14"') : s.icon} ${s.pay > 0 ? '×' + s.pay : '−2×'}</span>`).join('')}
       <span style="grid-column:span 3;color:var(--line2)">Пара любых — ×${SLOT_PAIR_PAY.toFixed(2)}</span>
     </div>
   </div>
@@ -1646,12 +1914,12 @@ async function spin() {
   const els = [$('#r0'), $('#r1'), $('#r2')];
   els.forEach(e => { if (e) { e.dataset.done = ''; e.classList.remove('settled', 'win'); e.classList.add('spin'); } });
   const iv = setInterval(() => {
-    els.forEach(e => { if (e && !e.dataset.done) e.textContent = pick(SLOT_SYMBOLS).icon; });
+    els.forEach(e => { if (e && !e.dataset.done) e.innerHTML = slotIconHTML(pick(SLOT_SYMBOLS)); });
     SFX.tick();
   }, 60);
   for (let i = 0; i < 3; i++) {
     await sleep(620 + i * 290);
-    if (els[i]) { els[i].dataset.done = '1'; els[i].textContent = final[i].icon; els[i].classList.remove('spin'); els[i].classList.add('settled'); }
+    if (els[i]) { els[i].dataset.done = '1'; els[i].innerHTML = slotIconHTML(final[i]); els[i].classList.remove('spin'); els[i].classList.add('settled'); }
     buzz(15);
   }
   clearInterval(iv);
@@ -1659,22 +1927,24 @@ async function spin() {
   let mult = 0, label = '', isWin = false, isLose = false;
   if (a.id === b.id && b.id === c.id) {
     if (a.pay > 0) {
-      mult = a.pay; label = `ТРИ ${a.icon} — ×${a.pay}!`; isWin = true;
+      mult = a.pay; label = 'ТРИ ' + (a.id === 'seven' ? 'СЕМЁРКИ' : a.id.toUpperCase()) + ' — ×' + a.pay + '!';
+      isWin = true;
       if (a.id === 'seven') { unlockAch('jackpot'); confettiBurst(120); }
     } else {
-      mult = a.pay; label = `ТРИ ЧЕРЕПА — ставка сгорает вдвое!`; isLose = true;
+      mult = a.pay; label = 'ТРИ ЧЕРЕПА — ставка сгорает вдвое!'; isLose = true;
       unlockAch('all_skulls');
     }
   } else if (a.id === b.id || b.id === c.id || a.id === c.id) {
     mult = SLOT_PAIR_PAY;
     const sym = (a.id === b.id || a.id === c.id) ? a : b;
-    label = `Пара ${sym.icon} — ×${SLOT_PAIR_PAY.toFixed(2)}`; isWin = true;
+    label = 'Пара — ×' + SLOT_PAIR_PAY.toFixed(2);
+    isWin = true;
   }
   if (mult > 0) {
     const w = payout(bet, mult, 'slots');
     const net = w - bet;
     registerWin(net);
-    slotMsg = `${label}  +${fmt(net)}`;
+    slotMsg = label + '  +' + fmt(net);
     slotMsgType = 'win';
     SFX.win(); buzz([20, 40, 20]);
     if (mult >= 20) { confettiBurst(60); SFX.big(); }
@@ -1684,12 +1954,12 @@ async function spin() {
     const extra = Math.min(bet, S.chips);
     S.chips -= extra;
     registerLoss();
-    slotMsg = `${label}  −${fmt(bet + extra)}`;
+    slotMsg = label + '  −' + fmt(bet + extra);
     slotMsgType = 'lose'; SFX.lose(); buzz([60, 50, 60]);
     if (checkBroke()) return;
   } else {
-    if (!onLose(bet)) { registerLoss(); slotMsg = `Пусто.  −${fmt(bet)}`; slotMsgType = 'lose'; SFX.lose(); }
-    else { slotMsg = '🍀 Талисман вернул ставку'; slotMsgType = 'win'; }
+    if (!onLose(bet)) { registerLoss(); slotMsg = 'Пусто.  −' + fmt(bet); slotMsgType = 'lose'; SFX.lose(); }
+    else { slotMsg = 'Талисман вернул ставку'; slotMsgType = 'win'; }
     if (checkBroke()) return;
   }
   slotReels = final;
@@ -1715,7 +1985,7 @@ function diceScreen() {
   const fillLeft = d.dir === 'over' ? d.target : 0;
   const fillW = d.dir === 'over' ? 100 - d.target : d.target - 1;
   return `
-  ${gameHeader('🎲 Кости', 'd100 · сам выбираешь риск')}
+  ${gameHeader('Кости', 'd100 · сам выбираешь риск')}
   ${chipBar()}
   ${betBox()}
   <div class="stage" id="dicestage">
@@ -1758,7 +2028,7 @@ function diceScreen() {
 function rerollBtnHTML() {
   const d = diceState;
   if (hasPerk('dice') && !d.usedReroll && d.phase === 'done') {
-    return `<button class="btn sec sm" style="margin-bottom:8px" onclick="rerollDice()">🎲 Переброс (1)</button>`;
+    return `<button class="btn sec sm" style="margin-bottom:8px" onclick="rerollDice()">${ico('p-cheat', 16)} Переброс (1)</button>`;
   }
   return '';
 }
@@ -1855,14 +2125,14 @@ function resolveDice(value, bet) {
     const w = payout(bet, mult, 'dice');
     const net = w - bet;
     registerWin(net);
-    d.msg = `${value} — победа!  +${fmt(net)}`; d.msgType = 'win';
+    d.msg = value + ' — победа!  +' + fmt(net); d.msgType = 'win';
     if (el) el.classList.add('win');
     SFX.win(); buzz([20, 40, 20]);
     if (mult >= 8) confettiBurst(40);
     animateChips('up');
   } else {
-    if (!onLose(bet)) { registerLoss(); d.msg = `${value} — мимо.  −${fmt(bet)}`; d.msgType = 'lose'; }
-    else { d.msg = '🍀 Талисман вернул ставку'; d.msgType = 'win'; }
+    if (!onLose(bet)) { registerLoss(); d.msg = value + ' — мимо.  −' + fmt(bet); d.msgType = 'lose'; }
+    else { d.msg = 'Талисман вернул ставку'; d.msgType = 'win'; }
     if (el) el.classList.add('lose');
     SFX.lose(); buzz(70);
   }
@@ -1903,7 +2173,7 @@ function highlowScreen() {
   const showOdds = hasPerk('counter');
   const suit = h.suit || (h.suit = rnd(4));
   return `
-  ${gameHeader('🂡 Хай-Лоу', 'Угадай и забери')}
+  ${gameHeader('Хай-Лоу', 'Угадай и забери')}
   ${chipBar()}
   ${h.phase === 'bet' ? betBox() : infoBox('В банке', fmt(h.pot), 'Серия', h.streak + ' побед подряд')}
   <div class="stage" id="hlstage">
@@ -1920,17 +2190,17 @@ function highlowScreen() {
     ${h.phase === 'bet' || h.phase === 'guess' ? `
       <div class="row">
         <button class="btn" onclick="guessHL('high')" ${mHi <= 0 || busy ? 'disabled' : ''}>
-          ⬆ ВЫШЕ${showOdds ? ` <span style="opacity:.7;font-size:11px">${(oHi*100).toFixed(0)}%</span>` : ''}
+          ВЫШЕ${showOdds ? ` <span style="opacity:.7;font-size:11px">${(oHi*100).toFixed(0)}%</span>` : ''}
           <div style="font-size:11px;font-weight:600;opacity:.75;margin-top:2px">×${mHi.toFixed(2)}</div>
         </button>
         <button class="btn blu" onclick="guessHL('low')" ${mLo <= 0 || busy ? 'disabled' : ''}>
-          ⬇ НИЖЕ${showOdds ? ` <span style="opacity:.7;font-size:11px">${(oLo*100).toFixed(0)}%</span>` : ''}
+          НИЖЕ${showOdds ? ` <span style="opacity:.7;font-size:11px">${(oLo*100).toFixed(0)}%</span>` : ''}
           <div style="font-size:11px;font-weight:600;opacity:.75;margin-top:2px">×${mLo.toFixed(2)}</div>
         </button>
       </div>` : ''}
     ${h.phase === 'cash' ? `
       <div class="row">
-        <button class="btn grn" onclick="cashHL()">💰 Забрать ${fmt(h.pot)}</button>
+        <button class="btn grn" onclick="cashHL()">Забрать ${fmt(h.pot)}</button>
         <button class="btn sec" onclick="continueHL()">Дальше</button>
       </div>` : ''}
   </div>
@@ -1967,7 +2237,7 @@ async function guessHL(dir) {
     const cold = S.curse && S.curse.id === 'cold';
     if (cold) {
       h.pot = 0;
-      h.msg = `Ничья (${cardFace(next)}) — холодная колода сжигает банк!`;
+      h.msg = 'Ничья — холодная колода сжигает банк!';
       h.msgType = 'lose';
       SFX.lose(); buzz(90);
       busy = false; h.phase = 'over';
@@ -1975,7 +2245,7 @@ async function guessHL(dir) {
       setTimeout(() => { hlState = null; S.screen = 'hub'; if (!checkBroke()) render(); }, 1400);
       return;
     }
-    h.msg = `Ничья (${cardFace(next)}) — пересдача`;
+    h.msg = 'Ничья — пересдача';
     h.msgType = ''; h.card = next; h.suit = rnd(4); h.phase = 'guess';
     busy = false; render();
     return;
@@ -1987,14 +2257,14 @@ async function guessHL(dir) {
     h.lastMult = m;
     h.card = next;
     h.phase = 'cash';
-    h.msg = `${cardFace(next)} — верно! Банк ×${m.toFixed(2)} = ${fmt(h.pot)}`;
+    h.msg = cardFace(next) + ' — верно! Банк ×' + m.toFixed(2) + ' = ' + fmt(h.pot);
     h.msgType = 'win';
     SFX.win(); buzz([20, 40, 20]);
     if (h.streak >= 3) confettiBurst(50);
   } else {
     const lost = h.pot;
     h.pot = 0; h.card = next; h.phase = 'over';
-    h.msg = `${cardFace(next)} — не угадал. Потеряно ${fmt(lost)}`;
+    h.msg = cardFace(next) + ' — не угадал. Потеряно ' + fmt(lost);
     h.msgType = 'lose';
     registerLoss();
     SFX.lose(); buzz(80);
@@ -2014,7 +2284,7 @@ function cashHL() {
   const net = winnings - hlState.baseBet;
   if (net > S.stats.biggest) S.stats.biggest = net;
   registerWin(net);
-  toast(`💰 +${fmt(winnings)}`, 'gold');
+  toast('+' + fmt(winnings), 'gold', 'a-coins');
   SFX.big(); buzz(30);
   animateChips('up');
   hlState = null; S.screen = 'hub';
@@ -2070,7 +2340,7 @@ function blackjackScreen() {
     ? `<div class="hand-val">${b.phase === 'play' ? handVal([b.dealer[0]]) + ' + ?' : dv}${isSoft(b.dealer) && b.phase !== 'play' ? ' (мягк.)' : ''}</div>`
     : '';
   return `
-  ${gameHeader('🃏 Блэкджек', 'Дилер стоит на 17')}
+  ${gameHeader('Блэкджек', 'Дилер стоит на 17')}
   ${chipBar()}
   ${b.phase === 'bet' ? betBox() : infoBox('Ставка', fmt(b.bet), b.doubled ? 'Удвоено' : '', '')}
   <div class="stage" id="bjstage" style="gap:10px">
@@ -2197,8 +2467,8 @@ async function bjFinish(reason, text) {
     const net = w - b.bet;
     registerWin(net);
     unlockAch('bj_natural');
-    b.msg = `🃏 БЛЭКДЖЕК! +${fmt(net)}`; b.msgType = 'win';
-    toast(`🃏 Блэкджек ×${m}`, 'gold');
+    b.msg = 'БЛЭКДЖЕК! +' + fmt(net); b.msgType = 'win';
+    toast('Блэкджек ×' + m, 'gold', 'p-ace');
     SFX.big(); confettiBurst(80); buzz([20, 40, 20]);
     isWin = true;
     animateChips('up');
@@ -2206,28 +2476,28 @@ async function bjFinish(reason, text) {
     S.chips += b.bet;
     b.msg = 'У обоих блэкджек — ничья'; b.msgType = '';
   } else if (dBJ) {
-    b.msg = `Блэкджек у дилера — −${fmt(b.bet)}`; b.msgType = 'lose';
+    b.msg = 'Блэкджек у дилера — −' + fmt(b.bet); b.msgType = 'lose';
     registerLoss();
     onLose(b.bet); SFX.lose(); buzz(70);
   } else if (dv > 21) {
     const w = payout(b.bet, 2, 'blackjack');
     const net = w - b.bet;
     registerWin(net);
-    b.msg = `Дилер перебрал (${dv})! +${fmt(net)}`; b.msgType = 'win';
+    b.msg = 'Дилер перебрал (' + dv + ')! +' + fmt(net); b.msgType = 'win';
     SFX.win(); buzz([20, 40, 20]); isWin = true;
     animateChips('up');
   } else if (pv > dv) {
     const w = payout(b.bet, 2, 'blackjack');
     const net = w - b.bet;
     registerWin(net);
-    b.msg = `${pv} против ${dv} — победа! +${fmt(net)}`; b.msgType = 'win';
+    b.msg = pv + ' против ' + dv + ' — победа! +' + fmt(net); b.msgType = 'win';
     SFX.win(); buzz([20, 40, 20]); isWin = true;
     animateChips('up');
   } else if (pv === dv) {
     S.chips += b.bet;
-    b.msg = `${pv} против ${dv} — ничья`; b.msgType = '';
+    b.msg = pv + ' против ' + dv + ' — ничья'; b.msgType = '';
   } else {
-    b.msg = `${pv} против ${dv} — −${fmt(b.bet)}`; b.msgType = 'lose';
+    b.msg = pv + ' против ' + dv + ' — −' + fmt(b.bet); b.msgType = 'lose';
     registerLoss();
     onLose(b.bet); SFX.lose(); buzz(70);
   }
@@ -2244,7 +2514,7 @@ function rouletteScreen() {
   const sel = r.pick;
   const col = r.number === null ? '' : rouColor(r.number);
   return `
-  ${gameHeader('🎡 Рулетка', 'Европейская · одно зеро')}
+  ${gameHeader('Рулетка', 'Европейская · одно зеро')}
   ${chipBar()}
   ${betBox()}
   <div class="stage" id="roustage" style="gap:12px">
@@ -2290,24 +2560,24 @@ async function spinRoulette() {
   rouState.number = n;
   if (wheel) { wheel.className = 'wheel ' + col; wheel.textContent = n; }
   const won = b.test(n);
-  const emoji = col === 'red' ? '🔴' : col === 'black' ? '⚫' : '🟢';
+  const emoji = col === 'red' ? 'красное' : col === 'black' ? 'чёрное' : 'зеро';
   if (n === 0) unlockAch('roulette_zero');
   if (won) {
     const w = payout(bet, b.pay, 'roulette');
     const net = w - bet;
     registerWin(net);
     if (b.id === 'red') unlockAch('roulette_red');
-    rouState.msg = `${n} ${emoji} — ${b.label} сыграло!  +${fmt(net)}`;
+    rouState.msg = n + ' (' + emoji + ') — ' + b.label + ' сыграло!  +' + fmt(net);
     rouState.msgType = 'win';
     SFX.big(); buzz([20, 40, 20]);
     animateChips('up');
   } else {
     if (!onLose(bet)) {
       registerLoss();
-      rouState.msg = `${n} ${emoji} — ${b.label} не сыграло.  −${fmt(bet)}`;
+      rouState.msg = n + ' (' + emoji + ') — ' + b.label + ' не сыграло.  −' + fmt(bet);
       rouState.msgType = 'lose';
     } else {
-      rouState.msg = '🍀 Талисман вернул ставку';
+      rouState.msg = 'Талисман вернул ставку';
       rouState.msgType = 'win';
     }
     SFX.lose(); buzz(70);
@@ -2322,19 +2592,18 @@ async function spinRoulette() {
 /* ============================== ЭКРАНЫ ================================ */
 function achScreen() {
   const unlocked = ACH.size;
-  const back = S.over ? `onclick="goHub()"` : `onclick="goHub()"`;
   return `
   <div class="hdr">
-    <button class="icon-btn" ${back}>←</button>
-    <div class="hdr-title serif" style="font-size:14px">🏅 Достижения<small>${unlocked} / ${ACHIEVEMENTS.length}${S.over ? ' · назад к итогу' : ''}</small></div>
-    <button class="icon-btn" onclick="showHelp()">?</button>
+    <button class="icon-btn" onclick="goHub()">${ico('u-back', 18)}</button>
+    <div class="hdr-title serif" style="font-size:14px">Достижения<small>${unlocked} / ${ACHIEVEMENTS.length}${S.over ? ' · назад к итогу' : ''}</small></div>
+    <button class="icon-btn" onclick="showHelp()">${ico('u-help', 18)}</button>
   </div>
   <div class="pad" style="padding-top:8px">
     <div class="ach-count">Открыто <b>${unlocked}</b> из <b>${ACHIEVEMENTS.length}</b></div>
     ${ACHIEVEMENTS.map(a => {
       const un = ACH.has(a.id);
       return `<div class="ach-item ${un ? 'unlocked' : 'locked'}">
-        <div class="ai">${un ? a.icon : '🔒'}</div>
+        <div class="ai">${ico(un ? a.icon : 'u-lock', 26)}</div>
         <div><div class="an">${a.name}</div><div class="ad">${a.desc}</div></div>
       </div>`;
     }).join('')}
@@ -2344,9 +2613,9 @@ function recordsScreen() {
   const best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
   return `
   <div class="hdr">
-    <button class="icon-btn" onclick="goHub()">←</button>
-    <div class="hdr-title serif" style="font-size:14px">🏆 Рекорды<small>Лучший: ${fmt(best)}${S.over ? ' · назад к итогу' : ''}</small></div>
-    <button class="icon-btn" onclick="showHelp()">?</button>
+    <button class="icon-btn" onclick="goHub()">${ico('u-back', 18)}</button>
+    <div class="hdr-title serif" style="font-size:14px">Рекорды<small>Лучший: ${fmt(best)}${S.over ? ' · назад к итогу' : ''}</small></div>
+    <button class="icon-btn" onclick="showHelp()">${ico('u-help', 18)}</button>
   </div>
   <div class="pad" style="padding-top:8px">
     <div class="sect" style="margin-top:4px">Топ-5 забегов</div>
@@ -2355,7 +2624,7 @@ function recordsScreen() {
           <div class="rec-row ${r.fresh ? 'new' : ''}">
             <div class="rnum ${i === 0 ? 'g' : ''}">${i + 1}</div>
             <div style="display:flex;gap:6px;align-items:center;min-width:0">
-              <span class="rtag ${r.result === 'escaped' ? 'win' : 'dead'}">${r.result === 'escaped' ? '🏆' : '💀'}</span>
+              <span class="rtag ${r.result === 'escaped' ? 'win' : 'dead'}">${ico(r.result === 'escaped' ? 'a-crown' : 'c-skull', 11)}</span>
               <span class="rec-name">${r.name ? r.name : 'Безымянный'}</span>
               <span class="rfl">этаж ${r.floor}</span>
             </div>
@@ -2393,27 +2662,26 @@ function showHelp() {
   $('#modal-root').innerHTML = `
   <div class="modal" onclick="if(event.target===this)closeModal()">
     <div class="modal-in">
-      <h2>ЛЮКС-7 · Как играть</h2>
+      <h2>${ico('u-help', 20)}ЛЮКС-7 · Как играть</h2>
       <p>Вы начинаете со <b class="k">100 фишками</b> на первом этаже. Цель — подняться на <b class="k">10-й этаж</b> и выйти живым.</p>
       <ul>
         <li>Чтобы подняться, платите за лифт. Цена растёт с этажом.</li>
         <li><b style="color:#e08a76">Если осталось меньше ${MIN_BET} фишек — забег закончен.</b></li>
         <li>Выбираете <b class="k">класс</b> в начале, <b class="k">перк</b> после каждого подъёма и заходите в <b class="k">магазин</b>.</li>
         <li>Со 2-го этажа — шанс <b style="color:#e08a76">проклятия</b>.</li>
-        <li>Иногда лифт приносит случайный бонус (+20…120 фишек).</li>
         <li>Забег <b>автосохраняется</b> между этажами.</li>
       </ul>
-      <h2 style="margin-top:22px">Классы</h2>
+      <h2 style="margin-top:22px">${ico('k-scholar', 18)}Классы</h2>
       <ul>
-        <li>🎓 <b>Считающий</b> — старт с «Карточный счёт», БД +5%.</li>
-        <li>🍀 <b>Фортуна</b> — старт с «Талисман», шанс проклятия −25%.</li>
-        <li>🔥 <b>Рисковый</b> — все выплаты ×1.15, лифт +20%.</li>
+        <li><b>Считающий</b> — старт с «Карточный счёт», БД +5%.</li>
+        <li><b>Фортуна</b> — старт с «Талисман», шанс проклятия −25%.</li>
+        <li><b>Рисковый</b> — все выплаты ×1.15, лифт +20%.</li>
       </ul>
-      <h2 style="margin-top:22px">Серии</h2>
-      <p>Три победы подряд — <b class="k">🔥 +15% к выплатам</b>, пока серия держится.</p>
-      <h2 style="margin-top:22px">Магазин</h2>
-      <p>После каждого подъёма можно потратить фишки: снять проклятие (200), купить перк (400), поставить оберег (80) или взять +40 фишек (30).</p>
-      <h2 style="margin-top:22px">Горячие клавиши (ПК)</h2>
+      <h2 style="margin-top:22px">${ico('p-hot', 18)}Серии</h2>
+      <p>Три победы подряд — <b class="k">+15% к выплатам</b>, пока серия держится.</p>
+      <h2 style="margin-top:22px">${ico('s-gift', 18)}Магазин</h2>
+      <p>После каждого подъёма: снять проклятие (200), купить перк (400), поставить оберег (80) или взять +40 фишек (30).</p>
+      <h2 style="margin-top:22px">${ico('u-help', 18)}Горячие клавиши (ПК)</h2>
       <p>
         <span class="kbd">1</span>–<span class="kbd">5</span> столы ·
         <span class="kbd">Esc</span> назад/закрыть ·
@@ -2432,7 +2700,7 @@ function showCurseInfo() {
   $('#modal-root').innerHTML = `
   <div class="modal" onclick="if(event.target===this)closeModal()">
     <div class="modal-in">
-      <h2>${S.curse.icon} ${S.curse.name}</h2>
+      <h2 style="color:#e08a76">${ico(S.curse.icon, 22)}${S.curse.name}</h2>
       <p>${S.curse.desc}</p>
       <p style="margin-top:12px;font-size:12px">Проклятие действует только на этом этаже.</p>
       <button class="btn sec" style="margin-top:20px" onclick="closeModal()">Закрыть</button>
@@ -2444,7 +2712,7 @@ function askNameForRecord() {
   $('#modal-root').innerHTML = `
   <div class="modal">
     <div class="modal-in">
-      <h2>🏆 Новый рекорд!</h2>
+      <h2>${ico('a-crown', 22)}Новый рекорд!</h2>
       <p style="margin-bottom:16px">${fmt(S.chips)} фишек · этаж ${S.floor}</p>
       <p style="margin-bottom:8px;font-size:12px">Подпишите результат (необязательно):</p>
       <input type="text" class="name-input" id="name-input" maxlength="18" placeholder="Ваше имя или ник" value="${saved.replace(/"/g, '&quot;')}">
@@ -2478,7 +2746,6 @@ function endRun(reason) {
   if (isNewBest) { localStorage.setItem(BEST_KEY, String(S.chips)); S.newBest = true; }
   S.prevBest = best;
 
-  // Запись рекорда
   const rec = {
     chips: S.chips,
     floor: S.floor,
@@ -2497,7 +2764,6 @@ function endRun(reason) {
   else SFX.lose();
   buzz([40, 60, 40]);
   render();
-  // Спросить имя, если новый личный рекорд
   if (isNewBest && S.chips > 0) {
     setTimeout(() => askNameForRecord(), 700);
   }
@@ -2508,7 +2774,7 @@ function renderEnd() {
   const best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
   el.innerHTML = `
   <div class="endwrap anim-screen">
-    <div class="endicon">${won ? '🏆' : '💀'}</div>
+    <div class="endicon" style="color:${won ? 'var(--gold2)' : '#e08a76'}">${ico(won ? 'a-crown' : 'c-skull', 72)}</div>
     <div class="endtitle serif">${won ? 'Вы вырвались' : 'Вы разорены'}</div>
     <div class="endlabel" style="margin-top:6px">Итог забега</div>
     <div class="endscore" style="color:${won ? 'var(--gold2)' : '#e08a76'}">${fmt(S.chips)}</div>
@@ -2521,7 +2787,7 @@ function renderEnd() {
         <div class="rec-row ${r.fresh ? 'new' : ''}">
           <div class="rnum ${i === 0 ? 'g' : ''}">${i + 1}</div>
           <div style="display:flex;gap:6px;align-items:center;min-width:0">
-            <span class="rtag ${r.result === 'escaped' ? 'win' : 'dead'}">${r.result === 'escaped' ? '🏆' : '💀'}</span>
+            <span class="rtag ${r.result === 'escaped' ? 'win' : 'dead'}">${ico(r.result === 'escaped' ? 'a-crown' : 'c-skull', 11)}</span>
             <span class="rec-name">${r.name ? r.name : 'Безымянный'}</span>
             <span class="rfl">этаж ${r.floor}</span>
           </div>
@@ -2540,12 +2806,12 @@ function renderEnd() {
 
     <div style="width:100%;max-width:340px;margin-top:26px">
       <button class="btn ${won ? 'grn' : ''}" onclick="newRun()">${won ? 'Новый забег' : 'Попробовать снова'}</button>
-      <button class="btn blu sm" style="margin-top:9px" onclick="shareResult()">📋 Поделиться результатом</button>
+      <button class="btn blu sm" style="margin-top:9px" onclick="shareResult()">${ico('u-share', 16)} Поделиться результатом</button>
       <div class="row" style="margin-top:9px">
-        <button class="btn sec sm" onclick="go('ach')">🏅 Достижения</button>
-        <button class="btn sec sm" onclick="go('records')">🏆 Рекорды</button>
+        <button class="btn sec sm" onclick="go('ach')">${ico('a-check', 16)} Достижения</button>
+        <button class="btn sec sm" onclick="go('records')">${ico('a-crown', 16)} Рекорды</button>
       </div>
-      <button class="btn sec sm" style="margin-top:9px" onclick="showHelp()">Как играть</button>
+      <button class="btn sec sm" style="margin-top:9px" onclick="showHelp()">${ico('u-help', 16)} Как играть</button>
     </div>
   </div>`;
 }
@@ -2559,7 +2825,7 @@ async function shareResult() {
     }
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(text);
-      toast('📋 Скопировано в буфер', 'good');
+      toast('Скопировано в буфер', 'good', 'u-share');
       return;
     }
     throw new Error('no clipboard');
@@ -2571,7 +2837,7 @@ async function shareResult() {
       document.body.appendChild(ta); ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      toast('📋 Скопировано', 'good');
+      toast('Скопировано', 'good', 'u-share');
     } catch (e2) { toast('Не удалось скопировать', 'bad'); }
   }
 }
@@ -2690,11 +2956,9 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (!S) return;
-
   if (k === 'm') { toggleSound(); return; }
   if (k === 'h' || k === '?') { showHelp(); return; }
 
-  // Экран смерти
   if (S.over) {
     if (S.screen === 'end') {
       if (k === 'enter' || k === ' ') { e.preventDefault(); newRun(); }
@@ -2703,16 +2967,12 @@ document.addEventListener('keydown', e => {
     }
     return;
   }
-
-  // Экран выбора класса
   if (S.screen === 'class') {
     if (k === '1') { e.preventDefault(); pickClass(CLASSES[0].id); return; }
     if (k === '2') { e.preventDefault(); pickClass(CLASSES[1].id); return; }
     if (k === '3') { e.preventDefault(); pickClass(CLASSES[2].id); return; }
     return;
   }
-
-  // Хаб
   if (S.screen === 'hub') {
     if (k === '1') { e.preventDefault(); go('blackjack'); return; }
     if (k === '2') { e.preventDefault(); go('roulette'); return; }
@@ -2724,8 +2984,6 @@ document.addEventListener('keydown', e => {
     if (k === 'e' || k === 'enter') { e.preventDefault(); takeElevator(); return; }
     return;
   }
-
-  // Основное действие в игре
   if (k === ' ' || k === 'enter') {
     e.preventDefault();
     if (busy) return;
@@ -2745,11 +3003,10 @@ document.addEventListener('keydown', e => {
     S = saved;
     applyTheme();
     render();
-    setTimeout(() => toast('↻ Забег восстановлен · этаж ' + S.floor, 'gold'), 200);
+    setTimeout(() => toast('Забег восстановлен · этаж ' + S.floor, 'gold', 'a-elev'), 200);
   } else {
     newRun();
   }
-  // Музыка при первом взаимодействии, если включена
   if (musicOn) {
     const startOnFirst = () => {
       try { ac(); if (musicOn) startMusic(); } catch (e) {}
