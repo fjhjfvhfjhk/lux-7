@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d0b09">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="ЛЮКС-7 — рогалик-казино. 10 этажей, боссы, 5 игр, классы, перки, проклятия, магазин.">
+<meta name="description" content="ЛЮКС-7 — рогалик-казино. 10 этажей, боссы, 5 игр, классы, перки, проклятия, магазин, инвентарь.">
 <title>ЛЮКС-7 — Рогалик-Казино</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><radialGradient id='g' cx='35%25' cy='28%25'><stop offset='0%25' stop-color='%23ffeaa7'/><stop offset='55%25' stop-color='%23f2c96b'/><stop offset='100%25' stop-color='%23a87520'/></radialGradient></defs><circle cx='20' cy='20' r='19' fill='url(%23g)' stroke='%236b4a12' stroke-width='1.4'/><circle cx='20' cy='20' r='14' fill='none' stroke='%236b4a12' stroke-width='0.9' opacity='.7' stroke-dasharray='2.4 2.4'/><text x='20' y='27' text-anchor='middle' font-size='20' font-weight='900' fill='%233a2606' font-family='Georgia,serif'>7</text></svg>">
@@ -35,7 +35,7 @@
 
 <div id="ambient" aria-hidden="true"></div>
 
-<!-- SVG ICON SPRITE -->
+<!-- SVG ICON SPRITE (базовый набор) -->
 <svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
   <symbol id="g-bj" viewBox="0 0 24 24"><path d="M7.5 3 L14 4.5 L11.5 17.5 L5 16 Z"/><path d="M10.5 4.5 L17 6 L14.5 19 L8 17.5" opacity=".5"/><circle cx="9.5" cy="10" r="1.7" class="fill-fg"/></symbol>
   <symbol id="g-roulette" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4" class="fill-fg"/><path d="M12 3 L12 6 M18.4 5.6 L16.2 7.8 M21 12 L18 12 M18.4 18.4 L16.2 16.2 M12 21 L12 18 M5.6 18.4 L7.8 16.2 M3 12 L6 12 M5.6 5.6 L7.8 7.8" stroke-width="1.4"/></symbol>
@@ -118,7 +118,7 @@
       showDiag(
         '<h1>ЛЮКС-7 · диагностика</h1>' +
         'UI не отрисован.\n\nURL: ' + location.href + '\n\n' +
-        'Проверь: styles.css, app.js, ambient.css, ambient.js лежат рядом с index.html.'
+        'Проверь, что эти файлы лежат рядом с index.html:\n  styles.css\n  app.js\n  ambient.css\n  ambient.js\n  items.js'
       );
     }, 2500);
   });
@@ -126,5 +126,6 @@
 </script>
 <script src="app.js"></script>
 <script src="ambient.js"></script>
+<script src="items.js"></script>
 </body>
 </html>
