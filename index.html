@@ -10,9 +10,9 @@
 <title>ЛЮКС-7 — Рогалик-Казино</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><radialGradient id='g' cx='35%25' cy='28%25'><stop offset='0%25' stop-color='%23ffeaa7'/><stop offset='55%25' stop-color='%23f2c96b'/><stop offset='100%25' stop-color='%23a87520'/></radialGradient></defs><circle cx='20' cy='20' r='19' fill='url(%23g)' stroke='%236b4a12' stroke-width='1.4'/><circle cx='20' cy='20' r='14' fill='none' stroke='%236b4a12' stroke-width='0.9' opacity='.7' stroke-dasharray='2.4 2.4'/><text x='20' y='27' text-anchor='middle' font-size='20' font-weight='900' fill='%233a2606' font-family='Georgia,serif'>7</text></svg>">
-<link rel="stylesheet" href="styles.css" onerror="window.__cssFail=(this.href||'styles.css')">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="ambient.css">
 <style>
-/* Диагностический оверлей — минимальный инлайн-CSS, чтобы показать проблему даже без styles.css */
 #diag{
   position:fixed;inset:0;z-index:99999;
   background:#1a0e0c;color:#ff8a7a;
@@ -33,9 +33,9 @@
 </head>
 <body data-theme="warm">
 
-<!-- ============================================================================
-     SVG ICON SPRITE — 51 symbol
-     ============================================================================ -->
+<div id="ambient" aria-hidden="true"></div>
+
+<!-- SVG ICON SPRITE -->
 <svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
   <symbol id="g-bj" viewBox="0 0 24 24"><path d="M7.5 3 L14 4.5 L11.5 17.5 L5 16 Z"/><path d="M10.5 4.5 L17 6 L14.5 19 L8 17.5" opacity=".5"/><circle cx="9.5" cy="10" r="1.7" class="fill-fg"/></symbol>
   <symbol id="g-roulette" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4" class="fill-fg"/><path d="M12 3 L12 6 M18.4 5.6 L16.2 7.8 M21 12 L18 12 M18.4 18.4 L16.2 16.2 M12 21 L12 18 M5.6 18.4 L7.8 16.2 M3 12 L6 12 M5.6 5.6 L7.8 7.8" stroke-width="1.4"/></symbol>
@@ -90,13 +90,9 @@
 <div id="app"></div>
 <div id="toasts"></div>
 <div id="modal-root"></div>
-
 <div id="diag" role="alert"></div>
 
 <script>
-/* ============================================================================
-   ДИАГНОСТИКА — показывает на экране телефона, что именно не загрузилось
-   ============================================================================ */
 (function(){
   var diagShown = false;
   function showDiag(html){
@@ -106,54 +102,29 @@
     el.innerHTML = html;
     el.classList.add('on');
   }
-  // Ловим JS-ошибки
   window.addEventListener('error', function(e){
     if (!e) return;
     if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) return;
     var msg = (e.message || 'unknown') + '\n  at ' + (e.filename || '') + ':' + (e.lineno || '');
     var el = document.getElementById('diag');
-    if (!el.classList.contains('on')) {
-      showDiag('<h1>⚠️ ОШИБКА В JS</h1>' + msg);
-    } else {
-      el.textContent += '\n[ERR] ' + msg;
-    }
+    if (!el.classList.contains('on')) showDiag('<h1>Ошибка в JS</h1>' + msg);
+    else el.textContent += '\n[ERR] ' + msg;
   }, true);
-  // Проверяем через 2.5 сек, отрисовался ли UI
   window.addEventListener('load', function(){
     setTimeout(function(){
       if (diagShown) return;
       var app = document.getElementById('app');
-      if (!app) return;
-      if (app.innerHTML.trim().length > 0) return; // всё ок
-      // UI пусто → собираем диагностику
-      var cssOk = !window.__cssFail;
-      var jsOk = !!window.__appLoaded;
-      var cssUrl = new URL('styles.css', location.href).href;
-      var jsUrl  = new URL('app.js', location.href).href;
+      if (!app || app.innerHTML.trim().length > 0) return;
       showDiag(
         '<h1>ЛЮКС-7 · диагностика</h1>' +
-        'Страница открылась, но игра не отрисовалась.\n\n' +
-        'URL страницы:\n  ' + location.href + '\n\n' +
-        '<span class="k">Проверка файлов:</span>\n' +
-        '  styles.css  → ' + (cssOk ? '<span class="ok">загрузился</span>' : '<span class="bad">НЕ загрузился</span>') + '\n' +
-        '  app.js      → ' + (jsOk  ? '<span class="ok">загрузился</span>' : '<span class="bad">НЕ загрузился</span>') + '\n\n' +
-        '<span class="k">Прямые ссылки (открой в новой вкладке):</span>\n' +
-        '  ' + cssUrl + '\n' +
-        '  ' + jsUrl  + '\n\n' +
-        '<span class="k">Если открывается 404 — файлы не лежат рядом с index.html.</span>\n\n' +
-        '<span class="k">Как исправить:</span>\n' +
-        '<ol>' +
-        '<li>Убедись, что <code>styles.css</code>, <code>app.js</code>, <code>index.html</code> лежат <b>в одной папке</b> в репозитории.</li>' +
-        '<li>Проверь <b>регистр имён</b>. GitHub Pages различает <code>App.js</code> и <code>app.js</code>. На GitHub открой каждый файл, посмотри настоящий URL и сверь его с тем, что в HTML.</li>' +
-        '<li>Если репозиторий называется НЕ <code>ijvfhfjhk.github.io</code>, открой страницу по адресу <code>https://ijvfhfjhk.github.io/<i>имя-репо</i>/</code>.</li>' +
-        '<li>После пуша подожди 1–2 минуты (GitHub Pages кэширует). Очисти кэш браузера: настройки → история → очистить данные.</li>' +
-        '</ol>' +
-        '<span class="k">Пришли скриншот этого экрана, если не понятно.</span>'
+        'UI не отрисован.\n\nURL: ' + location.href + '\n\n' +
+        'Проверь: styles.css, app.js, ambient.css, ambient.js лежат рядом с index.html.'
       );
     }, 2500);
   });
 })();
 </script>
-<script src="app.js" onload="window.__appLoaded=true" onerror="window.__appLoaded=false"></script>
+<script src="app.js"></script>
+<script src="ambient.js"></script>
 </body>
 </html>

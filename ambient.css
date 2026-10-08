@@ -1,0 +1,173 @@
+/* ============================================================================
+   ЛЮКС-7 · AMBIENT.CSS — глобальные игровые темы + эффекты погружения.
+   Подключается ПОСЛЕ styles.css. Перекрывает цвета на уровне окна.
+   ============================================================================ */
+
+/* ---------- 1. ПОЛНАЯ ТЕМА ОКНА ПО ИГРЕ (фон, шапка, ambient) ---------- */
+body[data-game="blackjack"]{ --bg:#04140a; --hdr-bg:rgba(4,20,10,.72);  --ambient:79,168,122; }
+body[data-game="roulette"] { --bg:#18080a; --hdr-bg:rgba(24,8,10,.72);  --ambient:200,80,63;  }
+body[data-game="dice"]     { --bg:#080716; --hdr-bg:rgba(8,7,22,.72);   --ambient:91,141,217; }
+body[data-game="highlow"]  { --bg:#060e18; --hdr-bg:rgba(6,14,24,.72);  --ambient:91,141,217; }
+body[data-game="slots"]    { --bg:#0e0418; --hdr-bg:rgba(14,4,24,.72);  --ambient:217,77,224; }
+
+/* Шапка принимает оттенок игры */
+body[data-game] .hdr{
+  background: var(--hdr-bg, rgba(13,11,9,.72));
+  border-bottom-color: rgba(var(--ambient, 217,164,65), .2);
+}
+
+/* Сцена — свой оттенок под каждую игру */
+body[data-game="blackjack"] .stage{ background:linear-gradient(170deg,#0c2015,#05110a); border-color:#1d4532; }
+body[data-game="roulette"]  .stage{ background:linear-gradient(170deg,#221010,#180808); border-color:#5c2a22; }
+body[data-game="dice"]      .stage{ background:linear-gradient(170deg,#101024,#080716); border-color:#2c3f6a; }
+body[data-game="highlow"]   .stage{ background:linear-gradient(170deg,#0d1728,#060e18); border-color:#2c3f6a; }
+body[data-game="slots"]     .stage{ background:linear-gradient(170deg,#180a2a,#0a0414); border-color:#4a2266; }
+
+/* ---------- 2. ГЛОБАЛЬНОЕ СВЕЧЕНИЕ НА ВСЁ ОКНО ---------- */
+#ambient{
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(80% 50% at 50% -10%, rgba(var(--ambient, 217,164,65), .16), transparent 62%),
+    radial-gradient(90% 55% at 50% 110%, rgba(var(--ambient, 217,164,65), .12), transparent 65%);
+  opacity: .85;
+  transition: background 1.2s cubic-bezier(.2,1,.3,1), opacity .8s;
+  animation: roomBreath 9s ease-in-out infinite;
+}
+@keyframes roomBreath{
+  0%,100%{ opacity:.78; }
+  50%    { opacity:1;   }
+}
+
+/* Фоновая подложка body::before тоже перекрашивается */
+body[data-game]::before{
+  background:
+    radial-gradient(60% 40% at 20% 0%, rgba(var(--ambient, 217,164,65), .10), transparent 70%),
+    radial-gradient(50% 40% at 100% 100%, rgba(var(--ambient, 217,164,65), .08), transparent 70%);
+}
+
+/* ---------- 3. DESKTOP — вся коробка меняет цвет ---------- */
+@media (min-width:900px){
+  body[data-game] #app{
+    background:
+      radial-gradient(120% 60% at 50% 0%, rgba(var(--ambient, 217,164,65), .16) 0%, rgba(0,0,0,0) 55%),
+      linear-gradient(180deg, var(--bg, #0d0b09), var(--bg, #0d0b09));
+    border-color: rgba(var(--ambient, 217,164,65), .22);
+    animation: appBreath 7s ease-in-out infinite;
+  }
+  @keyframes appBreath{
+    0%,100%{
+      box-shadow:
+        0 40px 120px rgba(0,0,0,.7),
+        0 0 0 1px rgba(var(--ambient, 217,164,65), .10) inset,
+        0 1px 0 rgba(255,255,255,.03) inset,
+        0 0 80px rgba(var(--ambient, 217,164,65), .05);
+    }
+    50%{
+      box-shadow:
+        0 40px 120px rgba(0,0,0,.7),
+        0 0 0 1px rgba(var(--ambient, 217,164,65), .24) inset,
+        0 1px 0 rgba(255,255,255,.03) inset,
+        0 0 140px rgba(var(--ambient, 217,164,65), .16);
+    }
+  }
+}
+
+/* ---------- 4. ФОНОВЫЕ ЧАСТИЦЫ ПЕРЕКРАШИВАЮТСЯ ---------- */
+body[data-game="blackjack"] #stars{ filter:hue-rotate(90deg)  saturate(1.35) brightness(1.05); }
+body[data-game="roulette"]  #stars{ filter:hue-rotate(-35deg) saturate(1.5)  brightness(1.05); }
+body[data-game="dice"]      #stars{ filter:hue-rotate(190deg) saturate(1.25) brightness(1.08); }
+body[data-game="highlow"]   #stars{ filter:hue-rotate(160deg) saturate(1.2)  brightness(1.05); }
+body[data-game="slots"]     #stars{ filter:hue-rotate(240deg) saturate(1.6)  brightness(1.1);  }
+
+/* ---------- 5. ДЕКОР СЦЕНЫ ПОД КАЖДУЮ ИГРУ ---------- */
+
+/* Блэкджек — текстура зелёного сукна */
+body[data-game="blackjack"] .stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg,  rgba(255,255,255,.02) 0 1px, transparent 1px 3px),
+    radial-gradient(65% 55% at 50% 50%, transparent 55%, rgba(0,0,0,.45));
+  mix-blend-mode:overlay;
+}
+
+/* Рулетка — три красных кольца */
+body[data-game="roulette"] .stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 28%, rgba(200,80,63,.10) 34%, transparent 40%),
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(200,80,63,.08) 58%, transparent 64%),
+    radial-gradient(circle at 50% 50%, transparent 74%, rgba(200,80,63,.06) 80%, transparent 86%),
+    radial-gradient(70% 60% at 50% 50%, transparent 55%, rgba(0,0,0,.4));
+}
+
+/* Кости — синяя миллиметровка */
+body[data-game="dice"] .stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(rgba(91,141,217,.07) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, rgba(91,141,217,.07) 1px, transparent 1px) 0 0 / 44px 44px,
+    radial-gradient(70% 60% at 50% 50%, transparent 55%, rgba(0,0,0,.4));
+}
+
+/* Хай-Лоу — сукно покерного стола */
+body[data-game="highlow"] .stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.018) 0 1px, transparent 1px 6px),
+    radial-gradient(65% 60% at 50% 50%, transparent 55%, rgba(0,0,0,.42));
+  mix-blend-mode:overlay;
+}
+
+/* Слоты — неоновые полосы + мерцание */
+body[data-game="slots"] .stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
+    radial-gradient(80% 60% at 50% 0%, rgba(217,77,224,.16), transparent 62%),
+    radial-gradient(60% 40% at 50% 100%, rgba(217,77,224,.10), transparent 70%);
+  animation: neonFlicker 4.5s ease-in-out infinite;
+}
+@keyframes neonFlicker{
+  0%,47%,52%,100%{ opacity:.95; }
+  48%{ opacity:.55; }
+  49%{ opacity:1;   }
+  50%{ opacity:.7;  }
+  51%{ opacity:1;   }
+}
+
+/* ---------- 6. ВЕРХНИЙ ОРЕОЛ СЦЕНЫ В ТОН ИГРЫ ---------- */
+body[data-game] .stage::before{
+  background:
+    radial-gradient(70% 50% at 50% 0%, rgba(var(--ambient, 217,164,65), .13), transparent 70%);
+}
+
+/* ---------- 7. ПЛАВНЫЕ ПЕРЕХОДЫ ЧЕРЕЗ ВЕСЬ UI ---------- */
+body, .hdr, .stage, .card, .betpanel, .gcard, .perk, .shop-item, .class-card, .ach-item, .rec-row, .bottom{
+  transition:
+    background-color .9s cubic-bezier(.2,1,.3,1),
+    background .9s cubic-bezier(.2,1,.3,1),
+    border-color .9s cubic-bezier(.2,1,.3,1),
+    box-shadow .9s cubic-bezier(.2,1,.3,1);
+}
+
+/* ---------- 8. МЕЛОЧИ ДЛЯ АТМОСФЕРЫ ---------- */
+
+/* Ховер карточек-столов даёт свет в тон игры */
+@media (hover:hover){
+  body[data-game] .gcard:hover{
+    box-shadow: 0 8px 28px rgba(var(--ambient, 217,164,65), .18);
+    border-color: rgba(var(--ambient, 217,164,65), .35);
+  }
+}
+
+/* Бейдж босса чуть ярче */
+body[data-game] .badge.boss{
+  box-shadow: 0 0 14px rgba(255,138,122,.15);
+}
+
+/* ---------- 9. РАЗГРУЗКА НА МОБИЛЬНЫХ ---------- */
+@media (max-width:899px){
+  #ambient{ animation:none; opacity:.8; }
+  body[data-game="slots"] .stage::after{ animation:none; }
+}
