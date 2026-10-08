@@ -189,7 +189,7 @@ const ROULETTE_BETS = [
   { id:'even',  label:'ЧЁТ',         cls:'',      pay:2, test:n => n !== 0 && n % 2 === 0 },
   { id:'odd',   label:'НЕЧЁТ',       cls:'',      pay:2, test:n => n !== 0 && n % 2 === 1 },
   { id:'low',   label:'1–18',        cls:'',      pay:2, test:n => n >= 1 && n <= 18 },
-  { id:'high',  label:'19–36',       cls:'',      pay:2, test:n >= 19 && n <= 36 },
+  { id:'high',  label:'19–36',       cls:'',      pay:2, test:n => n >= 19 && n <= 36 },
   { id:'d1',    label:'1-я дюжина',  cls:'',      pay:3, test:n => n >= 1 && n <= 12 },
   { id:'d2',    label:'2-я дюжина',  cls:'',      pay:3, test:n => n >= 13 && n <= 24 },
   { id:'d3',    label:'3-я дюжина',  cls:'',      pay:3, test:n => n >= 25 && n <= 36 },
