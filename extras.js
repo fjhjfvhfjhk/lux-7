@@ -1,9 +1,7 @@
 /* ============================================================================
-   ЛЮКС-7 · EXTRAS.JS (v2) — магазин, кража, счётчик, SW.
-   Исправления:
-     • Магазин: списывает фишки, сохраняет, обновляет UI, обновляет баланс.
-     • Кнопка магазина появляется на экране перков/магазина без сбоев.
-     • Service Worker по-прежнему регистрируется.
+   ЛЮКС-7 · EXTRAS.JS (v3) — магазин предметов, кража, счётчик, SW.
+   Фикс: убран лимит в 200 итераций на появление кнопки магазина.
+   Кнопка теперь появляется всегда, пока идёт нужный экран.
    ============================================================================ */
 (function () {
   'use strict';
@@ -18,7 +16,6 @@
     { id: 'joker', price: 1400 }
   ];
 
-  function $(s) { return document.querySelector(s); }
   function getS() {
     try { if (typeof S !== 'undefined' && S) return S; } catch (e) {}
     try { if (window.S) return window.S; } catch (e) {}
@@ -37,12 +34,6 @@
     root.appendChild(t);
     setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 300); }, 1700);
   }
-  function refreshUI() {
-    try {
-      if (typeof window.refreshDynamic === 'function') { window.refreshDynamic(); return; }
-      if (typeof window.render === 'function') window.render();
-    } catch (e) {}
-  }
   function refreshChipOnly() {
     var s = getS(); if (!s) return;
     var cv = document.getElementById('chipval');
@@ -58,7 +49,6 @@
     }
   }
 
-  /* ======================= МАГАЗИН ПРЕДМЕТОВ ============================= */
   function rollMarket() {
     var arr = MARKET_ITEMS.slice();
     for (var i = arr.length - 1; i > 0; i--) {
@@ -129,22 +119,18 @@
         var ok = window.LUX7Items.add(id, false);
         if (!ok) { toast('Инвентарь полон', 'bad'); return; }
 
-        // Списываем сразу
         s.chips -= price;
         if (s.chips < 0) s.chips = 0;
 
-        // Сохраняем забег, чтобы не потерять баланс
         try {
           if (typeof saveRun === 'function') saveRun();
           else {
-            // Fallback через localStorage
             try {
-              var runKey = 'lux7_run_v1';
-              var raw = localStorage.getItem(runKey);
+              var raw = localStorage.getItem('lux7_run_v1');
               if (raw) {
                 var data = JSON.parse(raw);
                 data.chips = s.chips;
-                localStorage.setItem(runKey, JSON.stringify(data));
+                localStorage.setItem('lux7_run_v1', JSON.stringify(data));
               }
             } catch (e) {}
           }
@@ -164,21 +150,18 @@
   }
 
   /* ======================= КНОПКА МАГАЗИНА ============================= */
-  var marketBtnTries = 0;
   function bindMarketButton() {
-    marketBtnTries++;
-    if (marketBtnTries > 200) { clearInterval(marketIv); return; }
-
-    var existing = document.getElementById('open-market-btn');
-    if (existing && !document.body.contains(existing)) existing = null;
-
     var hdr = document.querySelector('.hdr-title');
     if (!hdr) return;
     var txt = (hdr.textContent || '').toLowerCase();
     var isShop = txt.indexOf('магазин') >= 0;
     var isPerks = document.querySelector('#app .perk') !== null;
 
-    if (!isShop && !isPerks) return;
+    if (!isShop && !isPerks) {
+      var old = document.getElementById('open-market-btn');
+      if (old) old.remove();
+      return;
+    }
     if (document.getElementById('open-market-btn')) return;
 
     var container = document.querySelector('#app .pad') || document.querySelector('#app');
@@ -191,7 +174,7 @@
     btn.addEventListener('click', openMarket);
     container.appendChild(btn);
   }
-  var marketIv = setInterval(bindMarketButton, 600);
+  setInterval(bindMarketButton, 400);
 
   function injectMarketCSS() {
     if (document.getElementById('extras-style')) return;
@@ -210,7 +193,7 @@
     document.head.appendChild(s);
   }
 
-  /* ======================= КРАЖА НА ЛИФТЕ ============================== */
+  /* ======================= КРАЖА ======================================= */
   var prevFloor = -1;
   function checkTheft() {
     var s = getS();
@@ -250,7 +233,7 @@
   });
   finalObserver.observe(document.body, { childList: true, subtree: true });
 
-  /* ======================= «КОЛЛЕКТИОНЕР» В СПИСКЕ АЧИВОК ============== */
+  /* ======================= КОЛЛЕКЦИОНЕР В АЧИВКАХ ===================== */
   var achObserver = new MutationObserver(function () {
     var pad = document.querySelector('#app .pad');
     var title = document.querySelector('.hdr-title');
@@ -277,11 +260,6 @@
       if (m) {
         var total = parseInt(m[1], 10) + 1;
         lastB.innerHTML = html.replace(/из <b>\d+<\/b>/, 'из <b>' + total + '</b>');
-      }
-      var m2 = html.match(/Открыто <b>(\d+)<\/b>/);
-      if (m2 && got) {
-        var cur = parseInt(m2[1], 10) + 1;
-        lastB.innerHTML = lastB.innerHTML.replace(/Открыто <b>\d+<\/b>/, 'Открыто <b>' + cur + '</b>');
       }
     }
     pad.appendChild(item);

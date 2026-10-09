@@ -1,13 +1,8 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.4)
-   Изменения:
-     • ЛКМ / тап = открыть попап «Использовать / Выбросить».
-     • Удержание с движением = перетаскивание (без таймера, чисто по движению).
-     • ПКМ-контекстное меню убрано — оно конфликтовало и было неудобно.
-     • Всё остальное из v3.3 сохранено:
-       — сундук убран из дроп-пула, всегда даёт 2 предмета (или фишки);
-       — коллекционер = использовать все типы;
-       — перк «Рюкзак» (+3 слота до 8).
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.5)
+   Фикс v3.4:
+     • Попап скрывался тем же кликом, который его открывал.
+       Теперь закрытие через pointerdown вне попапа/слота.
    ============================================================================ */
 (function () {
   'use strict';
@@ -50,10 +45,10 @@
   var dragReady = false;
   var tipEl = null;
   var popupEl = null;
+  var popupOpenedAt = 0;
   var easterClicks = 0;
   var easterTimer = null;
 
-  /* ======================= ЧТЕНИЕ S ===================================== */
   function getS() {
     try { if (typeof S !== 'undefined' && S) return S; } catch (e) {}
     try { if (window.S) return window.S; } catch (e) {}
@@ -85,7 +80,6 @@
     return hasPerk('backpack') ? MAX_SLOTS_CAP : BASE_SLOTS;
   }
 
-  /* ======================= ПЕРК «РЮКЗАК» =============================== */
   function registerBackpackPerk() {
     try {
       if (typeof PERKS === 'undefined' || !Array.isArray(PERKS)) return false;
@@ -100,7 +94,6 @@
     if (registerBackpackPerk() || pkTries > 40) clearInterval(pkIv);
   }, 100);
 
-  /* ======================= ПАТЧ maxBet ================================== */
   function patchMaxBet() {
     if (typeof window.maxBet !== 'function') return false;
     if (window.__lux7_mbPatched) return true;
@@ -114,7 +107,6 @@
     if (patchMaxBet() || mbTries > 50) clearInterval(mbIv);
   }, 100);
 
-  /* ======================= СЧЁТЧИК ЗА ЗАБЕГ ============================= */
   function getRunGain() {
     try { return parseInt(localStorage.getItem(RUN_GAIN_KEY) || '0', 10) || 0; } catch (e) { return 0; }
   }
@@ -134,7 +126,6 @@
   }
   window.LUX7Items_getRunGain = getRunGain;
 
-  /* ======================= АВТООЧИСТКА ================================= */
   var lastScreen = null;
   setInterval(function () {
     var s = getS();
@@ -157,7 +148,6 @@
     }
   }
 
-  /* ======================= КОЛЛЕКЦИОНЕР ================================ */
   function markUsed(id) {
     if (!ITEMS[id]) return;
     if (usedTypes[id]) return;
@@ -176,7 +166,6 @@
     }, 700);
   }
 
-  /* ======================= УТИЛИТЫ ====================================== */
   function $(s) { return document.querySelector(s); }
 
   function loadInv() {
@@ -249,7 +238,6 @@
     saveInv(); renderGrid(); renderFab();
   }
 
-  /* ======================= ПАРТИКЛЫ ===================================== */
   function fireItemFlash(rarity) {
     var color = RARITY_COLOR[rarity] || RARITY_COLOR.common;
     var el = document.createElement('div');
@@ -259,7 +247,6 @@
     setTimeout(function () { el.remove(); }, 900);
   }
 
-  /* ======================= ИСПОЛЬЗОВАНИЕ ================================ */
   function useItem(i) {
     var id = inv[i];
     if (!id || !ITEMS[id]) return;
@@ -306,9 +293,8 @@
         }
         saveInv();
         suppressUntil = performance.now() + SUPPRESS_MS;
-        if (added === 2) {
-          toast('Сундук: 2 предмета', 'gold', it.icon);
-        } else if (added === 1) {
+        if (added === 2) toast('Сундук: 2 предмета', 'gold', it.icon);
+        else if (added === 1) {
           S.chips += 250; if (S.chips > S.peak) S.peak = S.chips;
           toast('Сундук: 1 предмет + 250 фишек', 'gold', it.icon);
         } else {
@@ -345,7 +331,6 @@
     toast('Выброшено: ' + it.name, 'bad', it.icon);
   }
 
-  /* ======================= ПОПАП ======================================== */
   function showItemPopup(i, slotEl) {
     hideItemPopup();
     var id = inv[i];
@@ -371,6 +356,8 @@
     popupEl.style.left = left + 'px';
     popupEl.style.top = top + 'px';
 
+    popupOpenedAt = performance.now();
+
     popupEl.querySelector('.lip-use').onclick = function (e) {
       e.stopPropagation(); hideItemPopup(); useItem(i);
     };
@@ -381,11 +368,18 @@
   function hideItemPopup() {
     if (popupEl) { popupEl.remove(); popupEl = null; }
   }
-  document.addEventListener('click', function (e) {
-    if (popupEl && !popupEl.contains(e.target)) hideItemPopup();
+
+  /* Закрытие попапа: pointerdown ВНЕ попапа и ВНЕ слота.
+     Так клик по слоту не «съедает» только что открытый попап. */
+  document.addEventListener('pointerdown', function (e) {
+    if (!popupEl) return;
+    if (performance.now() - popupOpenedAt < 120) return;
+    if (popupEl.contains(e.target)) return;
+    if (e.target.closest && e.target.closest('.inv-slot')) return;
+    if (e.target.closest && e.target.closest('#inv-fab')) return;
+    hideItemPopup();
   }, true);
 
-  /* ======================= WATCHER ====================================== */
   function watchChips() {
     var cv = document.getElementById('chipval');
     if (cv) {
@@ -422,7 +416,6 @@
     setTimeout(watchChips, 350);
   }
 
-  /* ======================= РЕНДЕР ======================================= */
   function renderGrid(flashNew) {
     var grid = document.getElementById('inv-grid');
     if (!grid) return;
@@ -493,9 +486,8 @@
   }
   function togglePanel() { if (isOpen) closePanel(); else openPanel(); }
 
-  /* ======================= ВВОД: ЛКМ/ТАП = попап, движение = drag ======= */
   function onPointerDown(e) {
-    if (e.button === 2) return; // ПКМ игнорируем — попап теперь на ЛКМ
+    if (e.button === 2) return;
     var i = parseInt(e.currentTarget.dataset.i, 10);
     if (isNaN(i) || !inv[i]) return;
     hideItemPopup();
@@ -539,7 +531,6 @@
     if (dragGhost) { dragGhost.remove(); dragGhost = null; }
 
     if (dragReady && dragSrc >= 0) {
-      // Перетаскивание — обмен слотов
       var el = document.elementFromPoint(e.clientX, e.clientY);
       var tgt = el && el.closest ? el.closest('.inv-slot') : null;
       if (tgt) {
@@ -555,7 +546,6 @@
         }
       }
     } else if (dragSrc >= 0) {
-      // Короткий клик / тап — открыть попап
       var slotEl = document.querySelector('.inv-slot[data-i="' + dragSrc + '"]');
       if (slotEl) showItemPopup(dragSrc, slotEl);
     }
@@ -574,7 +564,6 @@
     document.body.appendChild(dragGhost);
   }
 
-  /* ======================= TOOLTIP ====================================== */
   function ensureTip() {
     if (tipEl && document.body.contains(tipEl)) return tipEl;
     tipEl = document.createElement('div');
@@ -603,7 +592,6 @@
   }
   function onLeave() { if (tipEl) tipEl.classList.remove('on'); }
 
-  /* ======================= ПАСХАЛКА ===================================== */
   function bindEaster() {
     var coin = document.getElementById('coin');
     if (!coin || coin.dataset.easter === '1') return;
@@ -627,7 +615,7 @@
       '<div class="modal-in" style="text-align:center">' +
         '<h2 style="justify-content:center">' + ico('a-777', 22) + 'Ты нашёл секрет</h2>' +
         '<p style="font-family:Georgia,serif;font-size:20px;color:var(--gold2);letter-spacing:.1em;margin:20px 0">«' + (seen ? 'Опять ты?' : 'Ты дошёл до конца. За это — 777 фишек счастья.') + '»</p>' +
-        '<p style="font-size:12px;color:var(--mut);line-height:1.6">ЛЮКС-7 умеет считать клики. И запоминает тех, кто любит нажимать всё подряд.</p>' +
+        '<p style="font-size:12px;color:var(--mut);line-height:1.6">ЛЮКС-7 умеет считать клики.</p>' +
         '<button class="btn sec" style="margin-top:20px" onclick="this.closest(\'.modal\').remove()">Закрыть</button>' +
       '</div>';
     document.body.appendChild(modal);
@@ -644,7 +632,6 @@
     }
   }
 
-  /* ======================= CSS =========================================== */
   function injectStyles() {
     if (document.getElementById('items-style')) return;
     var css =
@@ -655,19 +642,15 @@
       '#inv-fab .inv-fab-badge{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#c8503f;color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.5);font-variant-numeric:tabular-nums}' +
       '#inv-fab.hidden{opacity:0;pointer-events:none;transform:scale(.6)}' +
       '@media (min-width:900px){#inv-fab{bottom:auto;top:50%;right:20px;transform:translateY(-50%);width:56px;height:56px}#inv-fab:hover{transform:translateY(calc(-50% - 2px)) scale(1.05)}#inv-fab.hidden{transform:translateY(-50%) scale(.6)}}' +
-
       '#inv-panel{position:fixed;top:50%;right:0;width:92px;max-height:80vh;padding:14px 10px 16px;background:linear-gradient(180deg,#251b12,#140d08);border:1px solid #4a3b24;border-right:none;border-radius:16px 0 0 16px;box-shadow:-14px 0 32px rgba(0,0,0,.45);transform:translate(0,-50%);transition:transform .35s cubic-bezier(.2,1,.3,1);overflow-y:auto;overscroll-behavior:contain;z-index:34}' +
       '@media (min-width:900px){#inv-panel{width:112px;padding:16px 12px 18px}}' +
-
       '.inv-panel-head{display:flex;align-items:center;justify-content:center;gap:5px;position:relative;margin-bottom:12px;padding-right:14px}' +
       '.inv-panel-head .inv-ico{width:22px;height:22px;color:#f2c96b;display:grid;place-items:center}' +
       '.inv-panel-head .inv-ico svg{width:20px;height:20px}' +
       '.inv-panel-head .inv-count-tag{font-size:10px;color:var(--mut);font-weight:700;font-variant-numeric:tabular-nums}' +
       '.inv-panel-head .inv-close{position:absolute;top:-4px;right:-2px;width:22px;height:22px;border-radius:7px;border:1px solid #4a3b24;background:#1e1610;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;padding:0;transition:.15s}' +
       '.inv-panel-head .inv-close:active{transform:scale(.9);color:#f2c96b;border-color:#8a6a24}' +
-
       '.inv-grid{display:grid;grid-template-columns:1fr;gap:8px}' +
-
       '.inv-slot{aspect-ratio:1;width:100%;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;transition:transform .15s,border-color .2s,box-shadow .2s}' +
       '.inv-slot.empty{background:rgba(42,34,22,.35);border-style:dashed;border-color:#382d1c;cursor:default}' +
       '.inv-slot.empty::before{content:"";width:5px;height:5px;border-radius:50%;background:rgba(154,141,118,.3)}' +
@@ -686,10 +669,8 @@
       '.inv-slot.epic{border-color:#8a6a24;animation:epicShimmer 3s ease-in-out infinite}' +
       '.inv-slot.epic svg{color:#f2c96b}' +
       '.inv-slot.epic .inv-rarity{background:#f2c96b;color:#f2c96b}' +
-
       '#inv-ghost{position:fixed;width:52px;height:52px;z-index:400;pointer-events:none;display:grid;place-items:center;background:#1a120c;border:2px solid #f2c96b;border-radius:12px;box-shadow:0 16px 38px rgba(0,0,0,.7);transform:translate(-50%,-50%);color:#f2c96b}' +
       '#inv-ghost svg{width:30px;height:30px}' +
-
       '#inv-tip{position:fixed;z-index:500;max-width:260px;padding:10px 14px;background:rgba(20,16,10,.98);border:1px solid #4a3b24;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.75);font-size:12.5px;line-height:1.45;pointer-events:none;opacity:0;transition:opacity .15s}' +
       '#inv-tip.on{opacity:1}' +
       '#inv-tip .tt-name{font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:7px;font-size:13px}' +
@@ -698,7 +679,6 @@
       '#inv-tip .tt-name.epic{color:#f2c96b}' +
       '#inv-tip .tt-desc{color:var(--mut);font-size:11.5px}' +
       '#inv-tip .tt-hint{color:var(--line2);font-size:10.5px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);letter-spacing:.03em}' +
-
       '.lux-item-popup{position:fixed;z-index:450;width:200px;padding:12px;background:rgba(20,16,10,.98);border:1px solid #4a3b24;border-radius:12px;box-shadow:0 20px 46px rgba(0,0,0,.85);animation:lipIn .18s cubic-bezier(.2,1,.3,1);display:flex;flex-direction:column;gap:8px}' +
       '.lux-item-popup.rare{border-color:#3a5c8a;box-shadow:0 20px 46px rgba(0,0,0,.85),0 0 22px rgba(91,141,217,.25)}' +
       '.lux-item-popup.epic{border-color:#8a6a24;box-shadow:0 20px 46px rgba(0,0,0,.85),0 0 24px rgba(217,164,65,.3)}' +
@@ -713,14 +693,11 @@
       '.lux-item-popup .lip-drop{background:transparent;color:#e08a76;border-color:#5c2a22}' +
       '.lux-item-popup .lip-drop:active{transform:scale(.96);background:rgba(200,80,63,.15)}' +
       '@keyframes lipIn{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}' +
-
       '.lux-item-flash{position:fixed;left:50%;top:50%;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:200;transform:translate(-50%,-50%);background:radial-gradient(circle, rgba(var(--fc,217,164,65),.9), transparent 70%);animation:luxFlash .85s cubic-bezier(.2,.9,.3,1)}' +
       '@keyframes luxFlash{0%{opacity:0;width:8px;height:8px}25%{opacity:1}100%{opacity:0;width:340px;height:340px}}' +
-
       '.inv-slot.flash-new{animation:invDrop .75s cubic-bezier(.34,1.56,.64,1)}' +
       '@keyframes invDrop{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.18) rotate(4deg);opacity:1}100%{transform:none}}' +
       '@keyframes epicShimmer{0%,100%{box-shadow:inset 0 0 12px rgba(217,164,65,.18),0 0 10px rgba(217,164,65,.15)}50%{box-shadow:inset 0 0 16px rgba(217,164,65,.32),0 0 26px rgba(217,164,65,.4)}}';
-
     var s = document.createElement('style');
     s.id = 'items-style';
     s.textContent = css;
