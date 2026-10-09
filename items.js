@@ -1,12 +1,13 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.3)
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.4)
    Изменения:
-     • ЛКМ / тап = использовать сразу. ПКМ = попап «Использовать / Выбросить».
-       Долгий тап = перетаскивание.
-     • Сундук больше НЕ падает в дропе. Дроп-пул: gem, ward, lucky, ace, joker.
-     • Сундук всегда даёт 2 предмета. Если места нет — компенсирует фишками.
-     • Ачивка «Коллекционер» → использовать все 6 типов предметов за забег.
-     • Перк «Рюкзак» (+3 слота, до 8) — регистрируется в пуле перков.
+     • ЛКМ / тап = открыть попап «Использовать / Выбросить».
+     • Удержание с движением = перетаскивание (без таймера, чисто по движению).
+     • ПКМ-контекстное меню убрано — оно конфликтовало и было неудобно.
+     • Всё остальное из v3.3 сохранено:
+       — сундук убран из дроп-пула, всегда даёт 2 предмета (или фишки);
+       — коллекционер = использовать все типы;
+       — перк «Рюкзак» (+3 слота до 8).
    ============================================================================ */
 (function () {
   'use strict';
@@ -15,7 +16,7 @@
   var BASE_SLOTS    = 5;
   var MAX_SLOTS_CAP = 8;
   var DROP_MIN      = 100;
-  var DRAG_HOLD_MS  = 380;
+  var DRAG_THRESH   = 12;
   var DROP_GUARD_MS = 3000;
   var SUPPRESS_MS   = 2500;
   var RUN_GAIN_KEY  = 'lux7_run_gain_v1';
@@ -31,7 +32,6 @@
     ace:   { icon:'i-ace',   rarity:'epic',   name:'Туз в рукаве', desc:'+500 фишек сразу' },
     joker: { icon:'i-joker', rarity:'epic',   name:'Джокер',       desc:'Удваивает баланс (до +3000)' }
   };
-  // Из пула исключён chest — он не падает в награду и не выпадает из сундуков
   var DROP_POOL = ['gem', 'ward', 'lucky', 'ace', 'joker'];
   var RARITY_W = { common: 7, rare: 3, epic: 1 };
   var RARITY_COLOR = { common: '201,183,142', rare: '155,186,245', epic: '242,201,107' };
@@ -45,7 +45,6 @@
   var usedTypes = {};
 
   var dragSrc = -1;
-  var dragTimer = null;
   var dragGhost = null;
   var dragStartPos = null;
   var dragReady = false;
@@ -86,7 +85,7 @@
     return hasPerk('backpack') ? MAX_SLOTS_CAP : BASE_SLOTS;
   }
 
-  /* ======================= РЕГИСТРАЦИЯ ПЕРКА «РЮКЗАК» =================== */
+  /* ======================= ПЕРК «РЮКЗАК» =============================== */
   function registerBackpackPerk() {
     try {
       if (typeof PERKS === 'undefined' || !Array.isArray(PERKS)) return false;
@@ -135,7 +134,7 @@
   }
   window.LUX7Items_getRunGain = getRunGain;
 
-  /* ======================= АВТООЧИСТКА / НОВЫЙ ЗАБЕГ ==================== */
+  /* ======================= АВТООЧИСТКА ================================= */
   var lastScreen = null;
   setInterval(function () {
     var s = getS();
@@ -146,7 +145,6 @@
       resetRunGain();
     }
     if (cur) lastScreen = cur;
-    // Перепроверяем слоты на случай изменения перка
     ensureSlotsCapacity();
   }, 500);
 
@@ -159,7 +157,7 @@
     }
   }
 
-  /* ======================= КОЛЛЕКЦИОНЕР (использовать все типы) ======= */
+  /* ======================= КОЛЛЕКЦИОНЕР ================================ */
   function markUsed(id) {
     if (!ITEMS[id]) return;
     if (usedTypes[id]) return;
@@ -227,7 +225,6 @@
   }
 
   function randomItemId() {
-    // Только из DROP_POOL — без chest
     var ids = DROP_POOL.slice();
     var total = 0;
     for (var i = 0; i < ids.length; i++) total += RARITY_W[ITEMS[ids[i]].rarity];
@@ -298,9 +295,7 @@
         refundNextLoss = true; toast('Клевер: следующая потеря вернётся', 'good', it.icon);
         break;
       case 'chest': {
-        // Сундук всегда даёт 2 предмета. Если места не хватает —
-        // за недостающие компенсируем фишками (250 за предмет).
-        inv.splice(i, 1); // сначала снимаем сам сундук
+        inv.splice(i, 1);
         var max = slotsMax();
         var added = 0;
         for (var k = 0; k < 2; k++) {
@@ -314,12 +309,10 @@
         if (added === 2) {
           toast('Сундук: 2 предмета', 'gold', it.icon);
         } else if (added === 1) {
-          S.chips += 250;
-          if (S.chips > S.peak) S.peak = S.chips;
+          S.chips += 250; if (S.chips > S.peak) S.peak = S.chips;
           toast('Сундук: 1 предмет + 250 фишек', 'gold', it.icon);
         } else {
-          S.chips += 500;
-          if (S.chips > S.peak) S.peak = S.chips;
+          S.chips += 500; if (S.chips > S.peak) S.peak = S.chips;
           toast('Сундук: места нет, +500 фишек', 'gold', it.icon);
         }
         if (isBusy()) refreshChipsLight(); else refreshGameUI(true);
@@ -352,7 +345,7 @@
     toast('Выброшено: ' + it.name, 'bad', it.icon);
   }
 
-  /* ======================= ПОПАП (только ПКМ) =========================== */
+  /* ======================= ПОПАП ======================================== */
   function showItemPopup(i, slotEl) {
     hideItemPopup();
     var id = inv[i];
@@ -391,9 +384,6 @@
   document.addEventListener('click', function (e) {
     if (popupEl && !popupEl.contains(e.target)) hideItemPopup();
   }, true);
-  document.addEventListener('contextmenu', function (e) {
-    if (e.target.closest && e.target.closest('.inv-slot')) e.preventDefault();
-  });
 
   /* ======================= WATCHER ====================================== */
   function watchChips() {
@@ -479,7 +469,6 @@
     for (var k = 0; k < slots.length; k++) {
       (function (slot) {
         slot.onpointerdown = onPointerDown;
-        slot.oncontextmenu = onContextMenu;
         slot.onmouseenter = onHover;
         slot.onmouseleave = onLeave;
       })(slots[k]);
@@ -504,39 +493,25 @@
   }
   function togglePanel() { if (isOpen) closePanel(); else openPanel(); }
 
-  /* ======================= ВВОД (мышь / тач) ============================ */
-  function onContextMenu(e) {
-    // ПКМ → попап с выбором
-    e.preventDefault();
-    var i = parseInt(e.currentTarget.dataset.i, 10);
-    if (isNaN(i) || !inv[i]) return;
-    showItemPopup(i, e.currentTarget);
-  }
-
+  /* ======================= ВВОД: ЛКМ/ТАП = попап, движение = drag ======= */
   function onPointerDown(e) {
+    if (e.button === 2) return; // ПКМ игнорируем — попап теперь на ЛКМ
     var i = parseInt(e.currentTarget.dataset.i, 10);
     if (isNaN(i) || !inv[i]) return;
     hideItemPopup();
     dragSrc = i;
     dragStartPos = { x: e.clientX, y: e.clientY };
     dragReady = false;
-    clearTimeout(dragTimer);
-    dragTimer = setTimeout(function () {
-      dragReady = true;
-      startGhost(e.clientX, e.clientY, inv[dragSrc]);
-      var src = document.querySelector('.inv-slot[data-i="' + dragSrc + '"]');
-      if (src) src.classList.add('dragging');
-    }, DRAG_HOLD_MS);
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
     try { e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
   }
   function onPointerMove(e) {
-    if (!dragStartPos) return;
+    if (dragSrc < 0 || !dragStartPos) return;
     var dx = e.clientX - dragStartPos.x;
     var dy = e.clientY - dragStartPos.y;
-    if (!dragReady && Math.sqrt(dx * dx + dy * dy) > 14) {
-      clearTimeout(dragTimer);
+    if (!dragReady && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESH) {
       dragReady = true;
       startGhost(e.clientX, e.clientY, inv[dragSrc]);
       var src = document.querySelector('.inv-slot[data-i="' + dragSrc + '"]');
@@ -553,9 +528,9 @@
     }
   }
   function onPointerUp(e) {
-    clearTimeout(dragTimer);
     document.removeEventListener('pointermove', onPointerMove);
     document.removeEventListener('pointerup', onPointerUp);
+    document.removeEventListener('pointercancel', onPointerUp);
     var stray = document.querySelectorAll('.inv-slot.dragging, .inv-slot.drop-target');
     for (var k = 0; k < stray.length; k++) {
       stray[k].classList.remove('dragging');
@@ -563,17 +538,14 @@
     }
     if (dragGhost) { dragGhost.remove(); dragGhost = null; }
 
-    // ПКМ мыши = показать попап (было обработано в contextmenu, pointerup не на ЛКМ)
-    if (e.button === 2) { dragSrc = -1; dragReady = false; dragStartPos = null; return; }
-
     if (dragReady && dragSrc >= 0) {
-      // тащили — поменять слоты
+      // Перетаскивание — обмен слотов
       var el = document.elementFromPoint(e.clientX, e.clientY);
       var tgt = el && el.closest ? el.closest('.inv-slot') : null;
       if (tgt) {
         var ti = parseInt(tgt.dataset.i, 10);
-        if (!isNaN(ti) && ti !== dragSrc && ti >= 0 && ti < slotsMax()) {
-          var max = slotsMax();
+        var max = slotsMax();
+        if (!isNaN(ti) && ti !== dragSrc && ti >= 0 && ti < max) {
           while (inv.length < max) inv.push(null);
           var tmp = inv[dragSrc];
           inv[dragSrc] = inv[ti];
@@ -583,8 +555,9 @@
         }
       }
     } else if (dragSrc >= 0) {
-      // короткое нажатие ЛКМ/тап = использовать сразу
-      useItem(dragSrc);
+      // Короткий клик / тап — открыть попап
+      var slotEl = document.querySelector('.inv-slot[data-i="' + dragSrc + '"]');
+      if (slotEl) showItemPopup(dragSrc, slotEl);
     }
     dragSrc = -1;
     dragReady = false;
@@ -618,9 +591,9 @@
     var t = ensureTip();
     t.innerHTML = '<div class="tt-name ' + it.rarity + '">' + ico(it.icon, 14) + it.name + '</div>' +
                   '<div class="tt-desc">' + it.desc + '</div>' +
-                  '<div class="tt-hint">ЛКМ — использовать · ПКМ — меню</div>';
+                  '<div class="tt-hint">Клик — меню · Удержать и потянуть — переставить</div>';
     var r = e.currentTarget.getBoundingClientRect();
-    var tipW = 240;
+    var tipW = 260;
     var left = r.left - tipW - 12;
     if (left < 8) left = r.right + 12;
     if (left + tipW > window.innerWidth - 8) left = window.innerWidth - tipW - 8;
@@ -695,10 +668,10 @@
 
       '.inv-grid{display:grid;grid-template-columns:1fr;gap:8px}' +
 
-      '.inv-slot{aspect-ratio:1;width:100%;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,border-color .2s,box-shadow .2s}' +
+      '.inv-slot{aspect-ratio:1;width:100%;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;transition:transform .15s,border-color .2s,box-shadow .2s}' +
       '.inv-slot.empty{background:rgba(42,34,22,.35);border-style:dashed;border-color:#382d1c;cursor:default}' +
       '.inv-slot.empty::before{content:"";width:5px;height:5px;border-radius:50%;background:rgba(154,141,118,.3)}' +
-      '.inv-slot:not(.empty):active{transform:scale(.92)}' +
+      '.inv-slot:not(.empty):active{transform:scale(.94)}' +
       '.inv-slot:not(.empty):hover{border-color:#8a6a24;box-shadow:0 0 20px rgba(217,164,65,.2),inset 0 0 12px rgba(217,164,65,.08)}' +
       '.inv-slot.dragging{opacity:.35}' +
       '.inv-slot.drop-target{background:rgba(217,164,65,.18);border-color:#f2c96b;box-shadow:0 0 20px rgba(242,201,107,.5),inset 0 0 14px rgba(242,201,107,.25)}' +
@@ -717,7 +690,7 @@
       '#inv-ghost{position:fixed;width:52px;height:52px;z-index:400;pointer-events:none;display:grid;place-items:center;background:#1a120c;border:2px solid #f2c96b;border-radius:12px;box-shadow:0 16px 38px rgba(0,0,0,.7);transform:translate(-50%,-50%);color:#f2c96b}' +
       '#inv-ghost svg{width:30px;height:30px}' +
 
-      '#inv-tip{position:fixed;z-index:500;max-width:240px;padding:10px 14px;background:rgba(20,16,10,.98);border:1px solid #4a3b24;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.75);font-size:12.5px;line-height:1.45;pointer-events:none;opacity:0;transition:opacity .15s}' +
+      '#inv-tip{position:fixed;z-index:500;max-width:260px;padding:10px 14px;background:rgba(20,16,10,.98);border:1px solid #4a3b24;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.75);font-size:12.5px;line-height:1.45;pointer-events:none;opacity:0;transition:opacity .15s}' +
       '#inv-tip.on{opacity:1}' +
       '#inv-tip .tt-name{font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:7px;font-size:13px}' +
       '#inv-tip .tt-name.common{color:#c9b78e}' +
