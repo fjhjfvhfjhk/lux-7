@@ -1,9 +1,11 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.0)
-   v3.0:
-     • Фикс сундука: учитываем, что сам сундук освободит слот.
-     • Открывает 2 предмета, если есть место, иначе сколько влезет.
-     • Не ругается «Инвентарь полон», если после удаления сундука место есть.
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.1)
+   Включает в себя:
+     • UI инвентаря (5 слотов, боковая панелька справа).
+     • Патч maxBet: этаж × 200 (чтобы «Кит» была достижима).
+     • Автоочистку инвентаря при старте нового забега.
+     • Фикс сундука: можно открыть, когда полон — сам освободит 1 слот.
+   Панель управляется display: none / block — bulletproof.
    ============================================================================ */
 (function () {
   'use strict';
@@ -39,6 +41,62 @@
   var dragReady = false;
   var tipEl = null;
 
+  /* ======================= ЧТЕНИЕ S (безопасно) ========================= */
+  function getS() {
+    try { if (typeof S !== 'undefined' && S) return S; } catch (e) {}
+    try { if (window.S) return window.S; } catch (e) {}
+    return null;
+  }
+  function isBusy() {
+    try { if (typeof busy !== 'undefined' && busy) return true; } catch (e) {}
+    try { if (window.busy) return true; } catch (e) {}
+    return false;
+  }
+  function readFloor() {
+    var s = getS();
+    if (s && typeof s.floor === 'number') return s.floor;
+    try {
+      var el = document.querySelector('.hdr-title small');
+      if (el) {
+        var m = String(el.textContent).match(/Этаж\s+(\d+)/i);
+        if (m) return parseInt(m[1], 10) || 1;
+      }
+    } catch (e) {}
+    return 1;
+  }
+
+  /* ======================= ПАТЧ maxBet ================================== */
+  function patchMaxBet() {
+    if (typeof window.maxBet !== 'function') return false;
+    if (window.__lux7_mbPatched) return true;
+    window.maxBet = function () {
+      var floor = readFloor();
+      return Math.max(200, floor * 200);
+    };
+    window.__lux7_mbPatched = true;
+    return true;
+  }
+  var mbTries = 0;
+  var mbIv = setInterval(function () {
+    mbTries++;
+    if (patchMaxBet() || mbTries > 50) clearInterval(mbIv);
+  }, 100);
+
+  /* ======================= АВТООЧИСТКА ИНВЕНТАРЯ ======================== */
+  var lastScreen = null;
+  var screenTries = 0;
+  setInterval(function () {
+    var s = getS();
+    var cur = s ? (s.screen || '') : '';
+    if (cur === 'class' && lastScreen && lastScreen !== 'class') {
+      // Игрок запустил новый забег
+      inv = []; saveInv(); renderGrid(); renderFab();
+      refundNextLoss = false;
+    }
+    if (cur) lastScreen = cur;
+  }, 500);
+
+  /* ======================= УТИЛИТЫ ======================================= */
   function $(s) { return document.querySelector(s); }
 
   function loadInv() {
@@ -62,16 +120,6 @@
     else t.textContent = msg;
     root.appendChild(t);
     setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 300); }, 1700);
-  }
-  function getS() {
-    try { if (typeof S !== 'undefined' && S) return S; } catch (e) {}
-    if (typeof window.S !== 'undefined' && window.S) return window.S;
-    return null;
-  }
-  function isBusy() {
-    try { if (typeof busy !== 'undefined' && busy) return true; } catch (e) {}
-    if (typeof window.busy !== 'undefined' && window.busy) return true;
-    return false;
   }
   function refreshChipsLight() {
     var S = getS(); if (!S) return;
@@ -154,46 +202,26 @@
         refundNextLoss = true; toast('Клевер: следующая потеря вернётся', 'good', it.icon);
         break;
       case 'chest': {
-        // Сундук сам уйдёт из инвентаря, освободив 1 слот.
-        // Значит, если сейчас инвентарь полон (5/5), после открытия будет 4/5 — влезет 1 предмет.
-        // Если 4/5 — будет 3/5 — влезет 2.
-        if (inv.length >= MAX_SLOTS) {
-          toast('Нужно освободить 1 слот', 'bad');
-          consumed = false;
-          break;
-        }
-        var slotsAfterRemove = MAX_SLOTS - (inv.length - 1); // -1 = сам сундук освободит
-        var want = Math.min(2, slotsAfterRemove);
-        var opened = 0;
-        for (var k = 0; k < want; k++) {
-          // Позволяем массиву временно дойти до MAX_SLOTS; removeItemAt уменьшит на 1.
+        // Сундук сам уйдёт, освободив 1 слот. Поэтому новый предмет влезет,
+        // даже если сейчас инвентарь полон: сначала удаляем сундук, потом добавляем.
+        // Убираем сундук заранее.
+        inv.splice(i, 1);
+        var added = 0;
+        for (var k = 0; k < 2; k++) {
           if (inv.length >= MAX_SLOTS) break;
           inv.push(randomItemId());
-          opened++;
-        }
-        // Если из-за разницы (сундук + добавления) длина превысила MAX — сразу подрежем
-        if (inv.length > MAX_SLOTS) {
-          inv.splice(i, 1); // удалим сундук заранее
-          // Дошли до конца — removeItemAt(i) будет повторно вызван ниже, но там i уже не сундук.
-          // Проще: удаляем сундук тут и ставим consumed = false, чтобы не удалять ниже.
-          saveInv();
-          if (opened === 0) {
-            toast('Нет места', 'bad');
-          } else {
-            toast('Открыто: ' + opened + ' предм.', 'gold', it.icon);
-          }
-          if (isBusy()) refreshChipsLight(); else refreshGameUI(true);
-          renderGrid(true); renderFab();
-          return;
+          added++;
         }
         saveInv();
-        if (opened === 0) {
-          toast('Нет места', 'bad');
-          consumed = false;
-          break;
+        suppressUntil = performance.now() + SUPPRESS_MS;
+        if (added === 0) {
+          toast('Нет места под новые предметы', 'bad');
+        } else {
+          toast('Открыто: ' + added + ' предм.', 'gold', it.icon);
         }
-        toast('Открыто: ' + opened + ' предм.', 'gold', it.icon);
-        break;
+        if (isBusy()) refreshChipsLight(); else refreshGameUI(true);
+        renderGrid(true); renderFab();
+        return;
       }
     }
 
@@ -244,6 +272,7 @@
     setTimeout(watchChips, 350);
   }
 
+  /* ======================= РЕНДЕР ======================================= */
   function renderGrid(flashNew) {
     var grid = document.getElementById('inv-grid');
     if (!grid) return;
@@ -295,11 +324,12 @@
     }
   }
 
+  /* ======================= ОТКРЫТИЕ / ЗАКРЫТИЕ ========================== */
   function openPanel() {
     isOpen = true;
     var panel = document.getElementById('inv-panel');
     var fab = document.getElementById('inv-fab');
-    if (panel) panel.classList.add('on');
+    if (panel) { panel.style.display = 'block'; panel.classList.add('on'); }
     if (fab) fab.classList.add('hidden');
     renderGrid();
   }
@@ -307,11 +337,12 @@
     isOpen = false;
     var panel = document.getElementById('inv-panel');
     var fab = document.getElementById('inv-fab');
-    if (panel) panel.classList.remove('on');
+    if (panel) { panel.classList.remove('on'); panel.style.display = 'none'; }
     if (fab) fab.classList.remove('hidden');
   }
   function togglePanel() { if (isOpen) closePanel(); else openPanel(); }
 
+  /* ======================= DRAG-AND-DROP ================================ */
   function onPointerDown(e) {
     var i = parseInt(e.currentTarget.dataset.i, 10);
     if (isNaN(i) || !inv[i]) return;
@@ -329,7 +360,6 @@
     document.addEventListener('pointerup', onPointerUp);
     try { e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
   }
-
   function onPointerMove(e) {
     if (!dragStartPos) return;
     var dx = e.clientX - dragStartPos.x;
@@ -351,7 +381,6 @@
       if (tgt && parseInt(tgt.dataset.i, 10) !== dragSrc) tgt.classList.add('drop-target');
     }
   }
-
   function onPointerUp(e) {
     clearTimeout(dragTimer);
     document.removeEventListener('pointermove', onPointerMove);
@@ -362,7 +391,6 @@
       stray[k].classList.remove('drop-target');
     }
     if (dragGhost) { dragGhost.remove(); dragGhost = null; }
-
     if (dragReady && dragSrc >= 0) {
       var el = document.elementFromPoint(e.clientX, e.clientY);
       var tgt = el && el.closest ? el.closest('.inv-slot') : null;
@@ -420,6 +448,7 @@
   }
   function onLeave() { if (tipEl) tipEl.classList.remove('on'); }
 
+  /* ======================= CSS =========================================== */
   function injectStyles() {
     if (document.getElementById('items-style')) return;
     var css =
@@ -433,35 +462,30 @@
       '@media (min-width:900px){#inv-fab{bottom:auto;top:50%;right:20px;transform:translateY(-50%);width:56px;height:56px}#inv-fab:hover{transform:translateY(calc(-50% - 2px)) scale(1.05)}#inv-fab.hidden{transform:translateY(-50%) scale(.6)}}' +
 
       '#inv-panel{' +
-        'position:fixed !important;' +
-        'top:50% !important;right:0 !important;' +
-        'width:92px !important;max-width:92px !important;' +
-        'height:auto !important;max-height:80vh !important;' +
-        'padding:14px 10px 16px !important;' +
+        'position:fixed;' +
+        'top:50%;right:0;' +
+        'width:92px;' +
+        'max-height:80vh;' +
+        'padding:14px 10px 16px;' +
         'background:linear-gradient(180deg,#251b12,#140d08);' +
         'border:1px solid #4a3b24;border-right:none;' +
         'border-radius:16px 0 0 16px;' +
-        'box-shadow:-14px 0 32px rgba(0,0,0,.45), inset 1px 0 0 rgba(242,201,107,.05);' +
-        'transform:translate(105%,-50%) !important;' +
-        'transition:transform .38s cubic-bezier(.2,1,.3,1),visibility .38s,opacity .2s;' +
-        'visibility:hidden;opacity:0;' +
+        'box-shadow:-14px 0 32px rgba(0,0,0,.45);' +
+        'transform:translate(0,-50%);' +
+        'transition:transform .35s cubic-bezier(.2,1,.3,1);' +
         'overflow-y:auto;overscroll-behavior:contain;' +
-        'z-index:34;flex:none;' +
+        'z-index:34;' +
       '}' +
-      '#inv-panel.on{transform:translate(0,-50%) !important;visibility:visible;opacity:1}' +
-
-      '@media (min-width:900px){' +
-        '#inv-panel{width:112px !important;max-width:112px !important;padding:16px 12px 18px !important;border-radius:18px 0 0 18px}' +
-      '}' +
+      '@media (min-width:900px){#inv-panel{width:112px;padding:16px 12px 18px}}' +
 
       '.inv-panel-head{display:flex;align-items:center;justify-content:center;gap:5px;position:relative;margin-bottom:12px;padding-right:14px}' +
       '.inv-panel-head .inv-ico{width:22px;height:22px;color:#f2c96b;display:grid;place-items:center}' +
       '.inv-panel-head .inv-ico svg{width:20px;height:20px}' +
-      '.inv-panel-head .inv-count-tag{font-size:10px;color:var(--mut);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em}' +
+      '.inv-panel-head .inv-count-tag{font-size:10px;color:var(--mut);font-weight:700;font-variant-numeric:tabular-nums}' +
       '.inv-panel-head .inv-close{position:absolute;top:-4px;right:-2px;width:22px;height:22px;border-radius:7px;border:1px solid #4a3b24;background:#1e1610;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;padding:0;transition:.15s}' +
       '.inv-panel-head .inv-close:active{transform:scale(.9);color:#f2c96b;border-color:#8a6a24}' +
 
-      '.inv-grid{display:grid !important;grid-template-columns:1fr !important;gap:8px !important}' +
+      '.inv-grid{display:grid;grid-template-columns:1fr;gap:8px}' +
 
       '.inv-slot{aspect-ratio:1;width:100%;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,border-color .2s,box-shadow .2s,background .25s}' +
       '.inv-slot.empty{background:rgba(42,34,22,.35);border-style:dashed;border-color:#382d1c;cursor:default}' +
@@ -505,7 +529,8 @@
 
   function injectSymbols() {
     var sprite = document.querySelector('svg.sprite');
-    if (!sprite || document.getElementById('i-gem')) return;
+    if (!sprite) return;
+    if (document.getElementById('i-gem')) return;
     var defs =
       '<symbol id="i-gem" viewBox="0 0 24 24"><path d="M12 3 L20 9 L12 21 L4 9 Z"/><path d="M12 3 L16 9 L12 21 L8 9 Z" opacity=".5"/><path d="M4 9 L20 9" opacity=".6"/></symbol>' +
       '<symbol id="i-chest" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="11" rx="1.5"/><path d="M3 13 L21 13"/><path d="M3 9 Q3 5 12 5 Q21 5 21 9"/><circle cx="12" cy="15" r="1.2" class="fill-fg"/></symbol>' +
@@ -530,6 +555,7 @@
 
     var panel = document.createElement('div');
     panel.id = 'inv-panel';
+    panel.style.display = 'none';
     panel.innerHTML =
       '<div class="inv-panel-head">' +
         '<span class="inv-ico">' + ico('i-bag', 20) + '</span>' +
@@ -552,6 +578,10 @@
     injectSymbols();
     injectUI();
     watchChips();
+    // Первая попытка патча и повтор — на всякий случай
+    patchMaxBet();
+    setTimeout(patchMaxBet, 500);
+    setTimeout(patchMaxBet, 1500);
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && isOpen) closePanel();
