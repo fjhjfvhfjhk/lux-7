@@ -1,13 +1,13 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v2.6, большая панель-сетка 5×2)
-   Самодостаточный. Доступ к S через глобальную lexical scope app.js.
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v2.7)
+   Боковая выезжающая панель справа. FAB в углу.
+   Самодостаточный. S читается из глобальной lexical scope app.js.
    ============================================================================ */
 (function () {
   'use strict';
 
-  /* ======================= КОНСТАНТЫ ===================================== */
   var STORE_KEY     = 'lux7_items_v1';
-  var MAX_SLOTS     = 10;             // 5 × 2
+  var MAX_SLOTS     = 10;
   var DROP_MIN      = 150;
   var DRAG_HOLD_MS  = 380;
   var DROP_GUARD_MS = 3000;
@@ -23,7 +23,6 @@
   };
   var RARITY_W = { common: 7, rare: 3, epic: 1 };
 
-  /* ======================= СОСТОЯНИЕ ===================================== */
   var inv = [];
   var refundNextLoss = false;
   var lastChips = -1;
@@ -38,7 +37,6 @@
   var dragReady = false;
   var tipEl = null;
 
-  /* ======================= УТИЛИТЫ ======================================= */
   function $(s) { return document.querySelector(s); }
 
   function loadInv() {
@@ -48,9 +46,7 @@
     inv = inv.filter(function (id) { return id && ITEMS[id]; });
     if (inv.length > MAX_SLOTS) inv = inv.slice(0, MAX_SLOTS);
   }
-  function saveInv() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(inv)); } catch (e) {}
-  }
+  function saveInv() { try { localStorage.setItem(STORE_KEY, JSON.stringify(inv)); } catch (e) {} }
   function ico(name, size) {
     size = size || 20;
     return '<svg class="ico" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" aria-hidden="true"><use href="#' + name + '"/></svg>';
@@ -97,7 +93,6 @@
     } catch (e) {}
   }
 
-  /* ======================= СЛУЧАЙНЫЙ ==================================== */
   function randomItemId() {
     var ids = Object.keys(ITEMS);
     var total = 0;
@@ -110,7 +105,6 @@
     return 'gem';
   }
 
-  /* ======================= ДОБАВИТЬ / УБРАТЬ ============================= */
   function addItem(id, silent) {
     if (!ITEMS[id]) return false;
     if (inv.length >= MAX_SLOTS) { if (!silent) toast('Инвентарь полон', 'bad'); return false; }
@@ -123,7 +117,6 @@
     saveInv(); renderGrid(); renderFab();
   }
 
-  /* ======================= ИСПОЛЬЗОВАНИЕ ================================= */
   function useItem(i) {
     var id = inv[i];
     if (!id || !ITEMS[id]) return;
@@ -135,14 +128,8 @@
 
     var consumed = true;
     switch (id) {
-      case 'gem':
-        S.chips += 200; if (S.chips > S.peak) S.peak = S.chips;
-        toast('+200 фишек', 'good', it.icon);
-        break;
-      case 'ace':
-        S.chips += 500; if (S.chips > S.peak) S.peak = S.chips;
-        toast('+500 фишек!', 'gold', it.icon);
-        break;
+      case 'gem':  S.chips += 200; if (S.chips > S.peak) S.peak = S.chips; toast('+200 фишек', 'good', it.icon); break;
+      case 'ace':  S.chips += 500; if (S.chips > S.peak) S.peak = S.chips; toast('+500 фишек!', 'gold', it.icon); break;
       case 'joker': {
         var gain = Math.min(3000, S.chips);
         if (gain <= 0) { toast('Нечего удваивать', 'bad'); consumed = false; break; }
@@ -152,14 +139,10 @@
       }
       case 'ward':
         if (!S.curse) { toast('Нет проклятия', 'bad'); consumed = false; break; }
-        S.curse = null;
-        toast('Проклятие снято', 'good', it.icon);
-        break;
+        S.curse = null; toast('Проклятие снято', 'good', it.icon); break;
       case 'lucky':
         if (refundNextLoss) { toast('Уже активно', 'bad'); consumed = false; break; }
-        refundNextLoss = true;
-        toast('Клевер: следующая потеря вернётся', 'good', it.icon);
-        break;
+        refundNextLoss = true; toast('Клевер: следующая потеря вернётся', 'good', it.icon); break;
       case 'chest': {
         var opened = 0;
         for (var k = 0; k < 2; k++) {
@@ -184,7 +167,6 @@
     renderFab();
   }
 
-  /* ======================= НАБЛЮДЕНИЕ ==================================== */
   function watchChips() {
     var cv = document.getElementById('chipval');
     if (cv) {
@@ -221,7 +203,7 @@
     setTimeout(watchChips, 350);
   }
 
-  /* ======================= РЕНДЕР СЕТКИ ================================== */
+  /* ======================= РЕНДЕР ======================================= */
   function renderGrid(flashNew) {
     var grid = document.getElementById('inv-grid');
     if (!grid) return;
@@ -236,9 +218,7 @@
       if (id && ITEMS[id]) {
         var it = ITEMS[id];
         html += '<div class="inv-slot ' + it.rarity + '" data-i="' + i + '" data-id="' + id + '">' +
-          ico(it.icon, 34) +
-          '<span class="inv-rarity"></span>' +
-        '</div>';
+          ico(it.icon, 34) + '<span class="inv-rarity"></span></div>';
       } else {
         html += '<div class="inv-slot empty" data-i="' + i + '"></div>';
       }
@@ -248,10 +228,7 @@
     if (flashNew && filled > prevFilled) {
       var slots = grid.querySelectorAll('.inv-slot:not(.empty)');
       var last = slots[slots.length - 1];
-      if (last) {
-        last.classList.add('flash-new');
-        setTimeout(function () { last.classList.remove('flash-new'); }, 800);
-      }
+      if (last) { last.classList.add('flash-new'); setTimeout(function () { last.classList.remove('flash-new'); }, 800); }
     }
     bindSlots();
   }
@@ -279,13 +256,15 @@
     }
   }
 
-  /* ======================= ОТКРЫТИЕ ПАНЕЛИ ============================== */
+  /* ======================= ОТКРЫТИЕ / ЗАКРЫТИЕ ========================== */
   function openPanel() {
     isOpen = true;
     var overlay = document.getElementById('inv-overlay');
     var panel = document.getElementById('inv-panel');
+    var fab = document.getElementById('inv-fab');
     if (overlay) overlay.classList.add('on');
     if (panel) panel.classList.add('on');
+    if (fab) fab.classList.add('hidden');
     renderGrid();
     renderFab();
   }
@@ -293,8 +272,10 @@
     isOpen = false;
     var overlay = document.getElementById('inv-overlay');
     var panel = document.getElementById('inv-panel');
+    var fab = document.getElementById('inv-fab');
     if (overlay) overlay.classList.remove('on');
     if (panel) panel.classList.remove('on');
+    if (fab) fab.classList.remove('hidden');
   }
   function togglePanel() { if (isOpen) closePanel(); else openPanel(); }
 
@@ -312,7 +293,6 @@
       var src = document.querySelector('.inv-slot[data-i="' + dragSrc + '"]');
       if (src) src.classList.add('dragging');
     }, DRAG_HOLD_MS);
-
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerup', onPointerUp);
     try { e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
@@ -397,8 +377,7 @@
     if (!id || !ITEMS[id]) return;
     var it = ITEMS[id];
     var t = ensureTip();
-    t.innerHTML = '<div class="tt-name ' + it.rarity + '">' + ico(it.icon, 14) + it.name + '</div>' +
-                  '<div class="tt-desc">' + it.desc + '</div>';
+    t.innerHTML = '<div class="tt-name ' + it.rarity + '">' + ico(it.icon, 14) + it.name + '</div><div class="tt-desc">' + it.desc + '</div>';
     var r = e.currentTarget.getBoundingClientRect();
     var tipW = 220;
     var left = r.left - tipW - 12;
@@ -414,49 +393,65 @@
   function injectStyles() {
     if (document.getElementById('items-style')) return;
     var css =
-      /* --- FAB --- */
-      '#inv-fab{position:fixed;z-index:32;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:14px;width:56px;height:56px;border-radius:50%;background:linear-gradient(180deg,#f7dc85,#c9922f);border:none;cursor:pointer;display:grid;place-items:center;color:#241a06;box-shadow:0 12px 26px rgba(0,0,0,.55),0 0 0 0 rgba(217,164,65,.55);transition:transform .15s,box-shadow .3s;animation:fabPulse 3s ease-in-out infinite}' +
+
+      /* ---------- FAB ---------- */
+      '#inv-fab{position:fixed;z-index:32;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:14px;width:56px;height:56px;border-radius:50%;background:linear-gradient(180deg,#f7dc85,#c9922f);border:none;cursor:pointer;display:grid;place-items:center;color:#241a06;box-shadow:0 12px 26px rgba(0,0,0,.55),0 0 0 0 rgba(217,164,65,.55);transition:transform .25s,opacity .25s,box-shadow .3s;animation:fabPulse 3s ease-in-out infinite}' +
       '#inv-fab:hover{transform:translateY(-2px) scale(1.04)}' +
       '#inv-fab:active{transform:scale(.94)}' +
       '#inv-fab svg{width:26px;height:26px}' +
       '#inv-fab .inv-fab-badge{position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#c8503f;color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.5);font-variant-numeric:tabular-nums}' +
-      '#inv-fab.has-items{animation:fabPulse 3s ease-in-out infinite,fabShake 6s ease-in-out infinite}' +
+      '#inv-fab.has-items{animation:fabPulse 3s ease-in-out infinite}' +
+      '#inv-fab.hidden{opacity:0;pointer-events:none;transform:scale(.6)}' +
       '@keyframes fabPulse{0%,100%{box-shadow:0 12px 26px rgba(0,0,0,.55),0 0 0 0 rgba(217,164,65,.55)}50%{box-shadow:0 12px 26px rgba(0,0,0,.55),0 0 0 14px rgba(217,164,65,0)}}' +
-      '@keyframes fabShake{0%,90%,100%{transform:none}92%{transform:rotate(-8deg)}94%{transform:rotate(8deg)}96%{transform:rotate(-5deg)}98%{transform:rotate(5deg)}}' +
-      '@media (min-width:900px){#inv-fab{bottom:auto;top:50%;right:22px;transform:translateY(-50%);width:64px;height:64px}#inv-fab:hover{transform:translateY(calc(-50% - 3px)) scale(1.05)}#inv-fab.has-items{animation:fabPulse 3s ease-in-out infinite}}' +
+      '@media (min-width:900px){' +
+        '#inv-fab{bottom:auto;top:50%;right:22px;transform:translateY(-50%);width:64px;height:64px}' +
+        '#inv-fab:hover{transform:translateY(calc(-50% - 2px)) scale(1.05)}' +
+        '#inv-fab.hidden{transform:translateY(-50%) scale(.6)}' +
+      '}' +
 
-      /* --- Overlay --- */
-      '#inv-overlay{position:fixed;inset:0;z-index:33;background:rgba(6,5,4,.55);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .25s}' +
+      /* ---------- Overlay ---------- */
+      '#inv-overlay{position:fixed;inset:0;z-index:33;background:rgba(6,5,4,.5);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .28s}' +
       '#inv-overlay.on{opacity:1;pointer-events:auto}' +
 
-      /* --- Panel (bottom sheet on mobile) --- */
-      '#inv-panel{position:fixed;left:0;right:0;bottom:0;z-index:34;padding:22px 18px calc(env(safe-area-inset-bottom,0px) + 26px);background:linear-gradient(180deg,#251b12,#160f09);border-top:1px solid #4a3b24;border-radius:22px 22px 0 0;transform:translateY(110%);transition:transform .38s cubic-bezier(.2,1,.3,1);box-shadow:0 -20px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(242,201,107,.08)}' +
-      '#inv-panel.on{transform:none}' +
+      /* ---------- Боковая панель справа ---------- */
+      '#inv-panel{position:fixed;top:0;right:0;bottom:0;z-index:34;' +
+        'width:min(340px,86vw);' +
+        'padding:calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 22px);' +
+        'background:linear-gradient(180deg,#251b12,#140d08);' +
+        'border-left:1px solid #4a3b24;' +
+        'border-radius:20px 0 0 20px;' +
+        'box-shadow:-24px 0 60px rgba(0,0,0,.65), inset 1px 0 0 rgba(242,201,107,.05);' +
+        'transform:translateX(103%);' +
+        'transition:transform .38s cubic-bezier(.2,1,.3,1);' +
+        'overflow-y:auto;' +
+        'overscroll-behavior:contain;-webkit-overflow-scrolling:touch}' +
+      '#inv-panel.on{transform:translateX(0)}' +
+
+      '@media (min-width:900px){' +
+        '#inv-panel{width:400px;border-radius:22px 0 0 22px;padding:28px 22px 24px}' +
+      '}' +
+
       '.inv-panel-head{display:flex;align-items:center;gap:10px;margin-bottom:18px}' +
       '.inv-panel-head .inv-ico{width:32px;height:32px;color:#f2c96b;display:grid;place-items:center}' +
       '.inv-panel-head h3{font-family:Georgia,serif;font-size:17px;color:#f2c96b;letter-spacing:.14em;text-transform:uppercase;margin:0;flex:1}' +
       '.inv-panel-head .inv-count-tag{font-size:11px;color:var(--mut);font-weight:700;font-variant-numeric:tabular-nums}' +
       '.inv-panel-head .inv-close{width:34px;height:34px;border-radius:10px;border:1px solid #4a3b24;background:#1e1610;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:20px;line-height:1;padding:0;transition:.15s}' +
       '.inv-panel-head .inv-close:active{transform:scale(.92);color:#f2c96b;border-color:#8a6a24}' +
-      '.inv-panel-hint{font-size:11px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5}' +
-      '@media (min-width:900px){' +
-        '#inv-panel{left:auto;right:24px;bottom:auto;top:50%;transform:translate(110%,-50%);width:480px;max-height:min(640px,calc(100dvh - 80px));padding:24px 24px 22px;border:1px solid #4a3b24;border-radius:22px;overflow-y:auto}' +
-        '#inv-panel.on{transform:translate(0,-50%)}' +
-      '}' +
+      '.inv-panel-hint{font-size:11px;color:var(--mut);text-align:center;margin-top:16px;line-height:1.5}' +
 
-      /* --- Grid --- */
-      '.inv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}' +
-      '@media (min-width:900px){.inv-grid{gap:12px}}' +
+      /* ---------- Сетка ---------- */
+      '.inv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}' +
+      '@media (min-width:900px){.inv-grid{gap:10px}}' +
 
-      '.inv-slot{aspect-ratio:1;border-radius:14px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,border-color .2s,box-shadow .2s,background .25s}' +
+      '.inv-slot{aspect-ratio:1;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,border-color .2s,box-shadow .2s,background .25s}' +
       '.inv-slot.empty{background:rgba(42,34,22,.3);border-style:dashed;border-color:#382d1c;cursor:default}' +
-      '.inv-slot.empty::before{content:"";width:6px;height:6px;border-radius:50%;background:rgba(154,141,118,.35)}' +
+      '.inv-slot.empty::before{content:"";width:6px;height:6px;border-radius:50%;background:rgba(154,141,118,.3)}' +
       '.inv-slot:not(.empty):active{transform:scale(.92)}' +
       '.inv-slot:not(.empty):hover{border-color:#8a6a24;box-shadow:0 0 22px rgba(217,164,65,.18),inset 0 0 12px rgba(217,164,65,.08)}' +
       '.inv-slot.dragging{opacity:.35}' +
       '.inv-slot.drop-target{background:rgba(217,164,65,.18);border-color:#f2c96b;box-shadow:0 0 22px rgba(242,201,107,.5),inset 0 0 14px rgba(242,201,107,.25)}' +
       '.inv-slot svg{pointer-events:none;width:56%;height:56%;position:relative;z-index:1}' +
-      '.inv-slot .inv-rarity{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor}' +
+      '.inv-slot .inv-rarity{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;box-shadow:0 0 8px currentColor}' +
       '.inv-slot.common{border-color:#5a4a2c}' +
       '.inv-slot.common svg{color:#c9b78e}' +
       '.inv-slot.common .inv-rarity{background:#c9b78e;color:#c9b78e}' +
@@ -488,7 +483,6 @@
     document.head.appendChild(s);
   }
 
-  /* ======================= SVG SYMBOLS =================================== */
   function injectSymbols() {
     var sprite = document.querySelector('svg.sprite');
     if (!sprite || document.getElementById('i-gem')) return;
@@ -512,7 +506,7 @@
     fab.type = 'button';
     fab.setAttribute('aria-label', 'Инвентарь');
     fab.innerHTML = ico('i-bag', 26) + '<span class="inv-fab-badge" style="display:none">0</span>';
-    fab.addEventListener('click', function (e) { e.stopPropagation(); togglePanel(); });
+    fab.addEventListener('click', function (e) { e.stopPropagation(); openPanel(); });
     document.body.appendChild(fab);
 
     var overlay = document.createElement('div');
@@ -540,7 +534,6 @@
     renderFab();
   }
 
-  /* ======================= BOOT ========================================== */
   function boot() {
     loadInv();
     injectStyles();
@@ -556,7 +549,6 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  /* ======================= ЭКСПОРТ ======================================= */
   window.LUX7Items = {
     add:    function (id) { return addItem(id); },
     remove: removeItemAt,
