@@ -1,15 +1,14 @@
 /* ============================================================================
-   ЛЮКС-7 · ROULETTE-FX.JS — атмосферный эффект выпадения числа (v2)
-   Работает через polling класса #wheel — не зависит от пересоздания DOM.
+   ЛЮКС-7 · ROULETTE-FX.JS — эффект выпадения числа (v3)
+   Только: тинт фона + волны полос от ближней к дальней. Без вспышки.
    ============================================================================ */
 (function () {
   'use strict';
 
-  /* ======================= ЦВЕТА / ПАРАМЕТРЫ ============================= */
   var PALETTE = {
-    red:   { rgb: '200,80,63',  border: 'rgba(220,110,95,.9)',  glow: 'rgba(200,80,63,.55)' },
+    red:   { rgb: '200,80,63',   border: 'rgba(220,110,95,.9)',   glow: 'rgba(200,80,63,.55)' },
     black: { rgb: '125,118,105', border: 'rgba(185,178,160,.85)', glow: 'rgba(140,130,110,.55)' },
-    green: { rgb: '79,168,122', border: 'rgba(120,210,165,.9)', glow: 'rgba(79,168,122,.55)' }
+    green: { rgb: '79,168,122',  border: 'rgba(120,210,165,.9)',  glow: 'rgba(79,168,122,.55)' }
   };
   var POLL_MS     = 100;
   var WAVE_MS     = 1400;
@@ -22,7 +21,6 @@
   var lastWheelCls = '';
   var lastColorFired = '';
 
-  /* ======================= СТИЛИ ========================================= */
   function injectStyles() {
     if (document.getElementById('roulette-fx-style')) return;
     var css =
@@ -32,12 +30,6 @@
       'body[data-rou]{ background:radial-gradient(80% 65% at 50% 50%, rgba(var(--ambient), .30), var(--bg,#0d0b09) 72%); }' +
       'body{ transition:background 1.1s cubic-bezier(.2,1,.3,1), background-color .9s cubic-bezier(.2,1,.3,1); }' +
 
-      /* Вспышка поверх всего, не ловит клики */
-      '#rou-flash{position:fixed;inset:0;z-index:22;pointer-events:none;opacity:0}' +
-      '#rou-flash.on{animation:rouFlash .55s ease-out}' +
-      '@keyframes rouFlash{0%{opacity:0}18%{opacity:.9}100%{opacity:0}}' +
-
-      /* Контейнер волн */
       '#roustage{isolation:isolate;position:relative}' +
       '#rou-rings{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:-1}' +
       '#rou-rings .rr{position:absolute;left:50%;top:50%;width:0;height:0;border-radius:50%;' +
@@ -56,13 +48,6 @@
     document.head.appendChild(s);
   }
 
-  /* ======================= РАЗМЕТКА ====================================== */
-  function ensureFlashLayer() {
-    if (document.getElementById('rou-flash')) return;
-    var el = document.createElement('div');
-    el.id = 'rou-flash';
-    document.body.appendChild(el);
-  }
   function ensureRings() {
     var stage = document.getElementById('roustage');
     if (!stage) return null;
@@ -88,10 +73,8 @@
     }
   }
 
-  /* ======================= ЭФФЕКТ ======================================== */
   function fire(color) {
     if (!color || !PALETTE[color]) return;
-    var p = PALETTE[color];
 
     document.body.dataset.rou = color;
 
@@ -99,16 +82,8 @@
     if (rings) {
       applyRingColors(color);
       rings.classList.remove('play');
-      void rings.offsetWidth; // force reflow
+      void rings.offsetWidth;
       rings.classList.add('play');
-    }
-
-    var flash = document.getElementById('rou-flash');
-    if (flash) {
-      flash.style.background = 'radial-gradient(80% 60% at 50% 50%, rgba(' + p.rgb + ',.55), transparent 65%)';
-      flash.classList.remove('on');
-      void flash.offsetWidth;
-      flash.classList.add('on');
     }
 
     playTone(color);
@@ -121,7 +96,6 @@
     }, HOLD_MS);
   }
 
-  /* ======================= ЗВУК ========================================== */
   function playTone(color) {
     try {
       var sound = localStorage.getItem('lux7_sound') !== '0';
@@ -150,7 +124,6 @@
     } catch (e) {}
   }
 
-  /* ======================= POLLING ======================================= */
   function parseColor(cls) {
     if (!cls) return null;
     if (cls.indexOf('green') >= 0) return 'green';
@@ -182,16 +155,13 @@
     setTimeout(poll, POLL_MS);
   }
 
-  /* ======================= BOOT ========================================== */
   function boot() {
     injectStyles();
-    ensureFlashLayer();
     poll();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  /* ======================= ЭКСПОРТ ======================================= */
   window.LUX7RouletteFX = { fire: fire };
 })();
