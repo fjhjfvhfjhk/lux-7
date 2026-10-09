@@ -1,14 +1,14 @@
 /* ============================================================================
-   ЛЮКС-7 · ROULETTE-FX.JS — эффект выпадения числа (v3)
-   Только: тинт фона + волны полос от ближней к дальней. Без вспышки.
+   ЛЮКС-7 · ROULETTE-FX.JS — эффект выпадения числа (v4)
+   Только волны-полосы в сцене + звук. Никакой вспышки фона.
    ============================================================================ */
 (function () {
   'use strict';
 
   var PALETTE = {
-    red:   { rgb: '200,80,63',   border: 'rgba(220,110,95,.9)',   glow: 'rgba(200,80,63,.55)' },
-    black: { rgb: '125,118,105', border: 'rgba(185,178,160,.85)', glow: 'rgba(140,130,110,.55)' },
-    green: { rgb: '79,168,122',  border: 'rgba(120,210,165,.9)',  glow: 'rgba(79,168,122,.55)' }
+    red:   { border: 'rgba(220,110,95,.9)',   glow: 'rgba(200,80,63,.55)' },
+    black: { border: 'rgba(185,178,160,.85)', glow: 'rgba(140,130,110,.55)' },
+    green: { border: 'rgba(120,210,165,.9)',  glow: 'rgba(79,168,122,.55)' }
   };
   var POLL_MS     = 100;
   var WAVE_MS     = 1400;
@@ -24,12 +24,6 @@
   function injectStyles() {
     if (document.getElementById('roulette-fx-style')) return;
     var css =
-      'body[data-rou="red"]  { --ambient:200,80,63;  }' +
-      'body[data-rou="black"]{ --ambient:125,118,105; }' +
-      'body[data-rou="green"]{ --ambient:79,168,122;  }' +
-      'body[data-rou]{ background:radial-gradient(80% 65% at 50% 50%, rgba(var(--ambient), .30), var(--bg,#0d0b09) 72%); }' +
-      'body{ transition:background 1.1s cubic-bezier(.2,1,.3,1), background-color .9s cubic-bezier(.2,1,.3,1); }' +
-
       '#roustage{isolation:isolate;position:relative}' +
       '#rou-rings{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:-1}' +
       '#rou-rings .rr{position:absolute;left:50%;top:50%;width:0;height:0;border-radius:50%;' +
@@ -76,8 +70,6 @@
   function fire(color) {
     if (!color || !PALETTE[color]) return;
 
-    document.body.dataset.rou = color;
-
     var rings = ensureRings();
     if (rings) {
       applyRingColors(color);
@@ -90,7 +82,6 @@
 
     clearTimeout(resetTimer);
     resetTimer = setTimeout(function () {
-      delete document.body.dataset.rou;
       var r2 = document.getElementById('rou-rings');
       if (r2) r2.classList.remove('play');
     }, HOLD_MS);
