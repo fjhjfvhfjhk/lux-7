@@ -1,6 +1,9 @@
 /* ============================================================================
-   ЛЮКС-7 · EXTRAS.JS — магазин предметов, кража на лифте, финальный счётчик.
-   Плюс регистрация Service Worker для оффлайн-режима.
+   ЛЮКС-7 · EXTRAS.JS (v2) — магазин, кража, счётчик, SW.
+   Исправления:
+     • Магазин: списывает фишки, сохраняет, обновляет UI, обновляет баланс.
+     • Кнопка магазина появляется на экране перков/магазина без сбоев.
+     • Service Worker по-прежнему регистрируется.
    ============================================================================ */
 (function () {
   'use strict';
@@ -8,7 +11,7 @@
   var ITEMS_MARKET_KEY = 'lux7_market_stock_v1';
   var MARKET_ITEMS = [
     { id: 'gem',   price: 250 },
-    { id: 'chest', price: 400 },
+    { id: 'chest', price: 350 },
     { id: 'ward',  price: 350 },
     { id: 'lucky', price: 300 },
     { id: 'ace',   price: 900 },
@@ -34,26 +37,53 @@
     root.appendChild(t);
     setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 300); }, 1700);
   }
-  function refreshChips() {
-    var S = getS(); if (!S) return;
-    try { if (typeof window.refreshDynamic === 'function') window.refreshDynamic(); } catch (e) {}
+  function refreshUI() {
+    try {
+      if (typeof window.refreshDynamic === 'function') { window.refreshDynamic(); return; }
+      if (typeof window.render === 'function') window.render();
+    } catch (e) {}
+  }
+  function refreshChipOnly() {
+    var s = getS(); if (!s) return;
+    var cv = document.getElementById('chipval');
+    if (cv) { try { cv.textContent = s.chips.toLocaleString('ru-RU'); } catch (e) {} }
+    var cs = document.getElementById('chipsub');
+    if (cs) {
+      var sub = 'фишек';
+      try {
+        if (s.peak > 100) sub += ' · пик ' + s.peak.toLocaleString('ru-RU');
+        if (s.winStreak > 0) sub += ' · серия ' + s.winStreak;
+      } catch (e) {}
+      cs.textContent = sub;
+    }
   }
 
-  /* ======================= 1. МАГАЗИН ПРЕДМЕТОВ ========================= */
-  /* Кнопка «Магазин предметов» на экране perks/shop. Открывает модалку
-     с 3 случайными предметами, ассортимент меняется на каждом этаже. */
-
+  /* ======================= МАГАЗИН ПРЕДМЕТОВ ============================= */
   function rollMarket() {
-    // 3 случайных предмета, без дублей, разной цены
     var arr = MARKET_ITEMS.slice();
-    for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
     return arr.slice(0, 3);
   }
   function loadMarket() {
-    try { var r = JSON.parse(localStorage.getItem(ITEMS_MARKET_KEY) || 'null'); if (r && r.floor === (getS() && getS().floor) && Array.isArray(r.items)) return r.items; } catch (e) {}
+    var s = getS();
+    var floor = s ? s.floor : 1;
+    try {
+      var r = JSON.parse(localStorage.getItem(ITEMS_MARKET_KEY) || 'null');
+      if (r && r.floor === floor && Array.isArray(r.items)) return r.items;
+    } catch (e) {}
     var items = rollMarket();
-    try { localStorage.setItem(ITEMS_MARKET_KEY, JSON.stringify({ floor: getS() && getS().floor, items: items })); } catch (e) {}
+    try { localStorage.setItem(ITEMS_MARKET_KEY, JSON.stringify({ floor: floor, items: items })); } catch (e) {}
     return items;
+  }
+
+  function itemName(id) {
+    return { gem:'Самоцвет', chest:'Сундук', ward:'Оберег', lucky:'Клевер', ace:'Туз в рукаве', joker:'Джокер' }[id] || id;
+  }
+  function itemIcon(id) {
+    return { gem:'i-gem', chest:'i-chest', ward:'i-ward', lucky:'i-lucky', ace:'i-ace', joker:'i-joker' }[id];
   }
 
   function openMarket() {
@@ -61,13 +91,6 @@
     if (!S) return;
     if (isBusy()) return;
     var items = loadMarket();
-
-    function itemName(id) {
-      return { gem:'Самоцвет', chest:'Сундук', ward:'Оберег', lucky:'Клевер', ace:'Туз в рукаве', joker:'Джокер' }[id] || id;
-    }
-    function itemIcon(id) {
-      return { gem:'i-gem', chest:'i-chest', ward:'i-ward', lucky:'i-lucky', ace:'i-ace', joker:'i-joker' }[id];
-    }
 
     var root = document.getElementById('modal-root');
     if (!root) return;
@@ -88,13 +111,12 @@
     modal.innerHTML =
       '<div class="modal-in">' +
         '<h2 style="justify-content:center">🛒 Магазин предметов</h2>' +
-        '<p style="text-align:center;margin-bottom:14px;font-size:12px">Ассортимент меняется каждый этаж. Кредит: <b style="color:var(--gold2)" id="market-chips">' + (S.chips || 0).toLocaleString('ru-RU') + '</b></p>' +
+        '<p style="text-align:center;margin-bottom:14px;font-size:12px">Ассортимент обновляется каждый этаж. У вас: <b style="color:var(--gold2)" id="market-chips">' + (S.chips || 0).toLocaleString('ru-RU') + '</b> фишек</p>' +
         '<div class="market-grid">' + list + '</div>' +
         '<button class="btn sec" style="margin-top:18px" onclick="document.getElementById(\'modal-root\').innerHTML=\'\'">Закрыть</button>' +
       '</div>';
     root.appendChild(modal);
 
-    // Обработчики покупки
     modal.querySelectorAll('.mi-buy').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var price = parseInt(btn.dataset.price, 10);
@@ -103,33 +125,62 @@
         if (!s) return;
         if (s.chips < price) { toast('Недостаточно фишек', 'bad'); return; }
         if (!window.LUX7Items) return;
+
         var ok = window.LUX7Items.add(id, false);
-        if (!ok) return;  // инвентарь полон
+        if (!ok) { toast('Инвентарь полон', 'bad'); return; }
+
+        // Списываем сразу
         s.chips -= price;
+        if (s.chips < 0) s.chips = 0;
+
+        // Сохраняем забег, чтобы не потерять баланс
+        try {
+          if (typeof saveRun === 'function') saveRun();
+          else {
+            // Fallback через localStorage
+            try {
+              var runKey = 'lux7_run_v1';
+              var raw = localStorage.getItem(runKey);
+              if (raw) {
+                var data = JSON.parse(raw);
+                data.chips = s.chips;
+                localStorage.setItem(runKey, JSON.stringify(data));
+              }
+            } catch (e) {}
+          }
+        } catch (e) {}
+
         var mc = document.getElementById('market-chips');
         if (mc) mc.textContent = s.chips.toLocaleString('ru-RU');
+        refreshChipOnly();
+
         btn.disabled = true;
-        btn.textContent = '✓';
+        btn.textContent = '✓ Куплено';
         btn.style.background = 'linear-gradient(180deg,#5fc08c,#37865c)';
         btn.style.color = '#04210f';
         toast('Куплено: ' + itemName(id), 'gold');
-        refreshChips();
       });
     });
   }
 
-  // Патчим leaveShop, чтобы добавить кнопку «Магазин предметов»
+  /* ======================= КНОПКА МАГАЗИНА ============================= */
+  var marketBtnTries = 0;
   function bindMarketButton() {
-    var el = document.querySelector('#app .bottom .btn, #app .bottom button.btn');
-    // Кнопка появляется на экране perks/shop. Найдём экран по заголовку.
-    var header = document.querySelector('.hdr-title');
-    if (!header) return;
-    var txt = (header.textContent || '').toLowerCase();
-    var isShop = txt.indexOf('магазин') >= 0;
-    var isPerks = txt.indexOf('этаж') >= 0 && document.querySelector('.perk');
-    if (!isShop && !isPerks) return;
+    marketBtnTries++;
+    if (marketBtnTries > 200) { clearInterval(marketIv); return; }
 
+    var existing = document.getElementById('open-market-btn');
+    if (existing && !document.body.contains(existing)) existing = null;
+
+    var hdr = document.querySelector('.hdr-title');
+    if (!hdr) return;
+    var txt = (hdr.textContent || '').toLowerCase();
+    var isShop = txt.indexOf('магазин') >= 0;
+    var isPerks = document.querySelector('#app .perk') !== null;
+
+    if (!isShop && !isPerks) return;
     if (document.getElementById('open-market-btn')) return;
+
     var container = document.querySelector('#app .pad') || document.querySelector('#app');
     if (!container) return;
     var btn = document.createElement('button');
@@ -140,9 +191,8 @@
     btn.addEventListener('click', openMarket);
     container.appendChild(btn);
   }
-  setInterval(bindMarketButton, 600);
+  var marketIv = setInterval(bindMarketButton, 600);
 
-  // CSS для модалки магазина
   function injectMarketCSS() {
     if (document.getElementById('extras-style')) return;
     var css =
@@ -160,52 +210,38 @@
     document.head.appendChild(s);
   }
 
-  /* ======================= 2. КРАЖА НА ЛИФТЕ ============================ */
-  /* Отслеживаем смену этажа — если этаж стал больше, шанс 15%, что кто-то украдёт предмет. */
+  /* ======================= КРАЖА НА ЛИФТЕ ============================== */
   var prevFloor = -1;
-  var prevItemCount = -1;
-
   function checkTheft() {
-    var S = getS();
-    if (!S) return;
-    var floor = S.floor || 0;
-    var itemCount = window.LUX7Items ? window.LUX7Items.list().filter(Boolean).length : 0;
-
-    if (prevFloor >= 0 && floor > prevFloor && itemCount > 0) {
-      // поднимаемся на этаж
-      if (Math.random() < 0.15) {
-        var list = window.LUX7Items.list();
-        if (list.length > 0) {
-          var idx = Math.floor(Math.random() * list.length);
-          var stolenId = list[idx];
-          var names = { gem:'Самоцвет', chest:'Сундук', ward:'Оберег', lucky:'Клевер', ace:'Туз в рукаве', joker:'Джокер' };
-          window.LUX7Items.remove(idx);
-          setTimeout(function () {
-            toast('Кто-то стащил ' + (names[stolenId] || 'предмет') + '!', 'bad');
-          }, 800);
-        }
+    var s = getS();
+    if (!s) return;
+    var floor = s.floor || 0;
+    if (prevFloor >= 0 && floor > prevFloor && window.LUX7Items) {
+      var list = window.LUX7Items.list().filter(Boolean);
+      if (list.length > 0 && Math.random() < 0.15) {
+        var idx = Math.floor(Math.random() * list.length);
+        var stolenId = list[idx];
+        var names = { gem:'Самоцвет', chest:'Сундук', ward:'Оберег', lucky:'Клевер', ace:'Туз в рукаве', joker:'Джокер' };
+        window.LUX7Items.remove(idx);
+        setTimeout(function () {
+          toast('Кто-то стащил ' + (names[stolenId] || 'предмет') + '!', 'bad');
+        }, 800);
       }
     }
     prevFloor = floor;
-    prevItemCount = itemCount;
   }
   setInterval(checkTheft, 500);
 
-  /* ======================= 3. СЧЁТЧИК ПРЕДМЕТОВ В ФИНАЛЕ ================ */
-  /* Дорисовываем строку «Предметов найдено» в финальном экране. */
+  /* ======================= СЧЁТЧИК В ФИНАЛЕ ============================= */
   var finalObserver = new MutationObserver(function () {
     var endwrap = document.querySelector('.endwrap');
     if (!endwrap) return;
     if (endwrap.dataset.itemsAdded === '1') return;
     endwrap.dataset.itemsAdded = '1';
-
     var gain = window.LUX7Items_getRunGain ? window.LUX7Items_getRunGain() : 0;
     if (!gain) return;
-
-    // Находим блок статистики
     var stats = endwrap.querySelectorAll('.statline');
     if (!stats.length) return;
-
     var line = document.createElement('div');
     line.className = 'statline';
     line.innerHTML = '<span>Предметов найдено</span><span>' + gain + '</span>';
@@ -214,7 +250,7 @@
   });
   finalObserver.observe(document.body, { childList: true, subtree: true });
 
-  /* ======================= 4. ДОРИСОВКА «КОЛЛЕКТИОНЕР» В ДОСТИЖЕНИЯХ ==== */
+  /* ======================= «КОЛЛЕКТИОНЕР» В СПИСКЕ АЧИВОК ============== */
   var achObserver = new MutationObserver(function () {
     var pad = document.querySelector('#app .pad');
     var title = document.querySelector('.hdr-title');
@@ -231,15 +267,9 @@
     item.className = 'ach-item ' + (got ? 'unlocked' : 'locked');
     item.style.marginTop = '8px';
     item.innerHTML =
-      '<div class="ai"><svg class="ico" width="26" height="26" viewBox="0 0 24 24"><use href="#' + (got ? 'i-chest' : 'u-lock') + '"/></svg></div>' +
-      '<div><div class="an">Коллекционер</div><div class="ad">Собрать все 6 видов предметов одновременно</div></div>';
+      '<div class="ai"><svg class="ico" width="26" height="26" viewBox="0 0 24 24"><use href="#' + (got ? 'i-ace' : 'u-lock') + '"/></svg></div>' +
+      '<div><div class="an">Коллекционер</div><div class="ad">Использовать все 6 типов предметов за один забег</div></div>';
 
-    // Обновляем счётчик «Открыто X из Y»
-    var counter = pad.querySelector('.ach-count b:last-child');
-    if (counter) {
-      var cur = parseInt(counter.textContent, 10) || 0;
-      counter.textContent = String(cur + 1);
-    }
     var lastB = pad.querySelector('.ach-count');
     if (lastB) {
       var html = lastB.innerHTML;
@@ -248,23 +278,22 @@
         var total = parseInt(m[1], 10) + 1;
         lastB.innerHTML = html.replace(/из <b>\d+<\/b>/, 'из <b>' + total + '</b>');
       }
+      var m2 = html.match(/Открыто <b>(\d+)<\/b>/);
+      if (m2 && got) {
+        var cur = parseInt(m2[1], 10) + 1;
+        lastB.innerHTML = lastB.innerHTML.replace(/Открыто <b>\d+<\/b>/, 'Открыто <b>' + cur + '</b>');
+      }
     }
-
     pad.appendChild(item);
   });
   achObserver.observe(document.body, { childList: true, subtree: true });
 
-  /* ======================= 5. SERVICE WORKER ============================ */
+  /* ======================= SERVICE WORKER ============================== */
   function registerSW() {
     if (!('serviceWorker' in navigator)) return;
-    // SW можно регистрировать только по https или localhost.
-    // GitHub Pages — https, всё ок.
-    try {
-      navigator.serviceWorker.register('./sw.js').catch(function () {});
-    } catch (e) {}
+    try { navigator.serviceWorker.register('./sw.js').catch(function () {}); } catch (e) {}
   }
 
-  /* ======================= BOOT ========================================= */
   function boot() {
     injectMarketCSS();
     registerSW();
@@ -272,7 +301,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  window.LUX7Extras = {
-    openMarket: openMarket
-  };
+  window.LUX7Extras = { openMarket: openMarket };
 })();
