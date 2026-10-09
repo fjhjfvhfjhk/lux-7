@@ -1,11 +1,12 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.1)
-   Включает в себя:
-     • UI инвентаря (5 слотов, боковая панелька справа).
-     • Патч maxBet: этаж × 200 (чтобы «Кит» была достижима).
-     • Автоочистку инвентаря при старте нового забега.
-     • Фикс сундука: можно открыть, когда полон — сам освободит 1 слот.
-   Панель управляется display: none / block — bulletproof.
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.2)
+   Новое:
+     • Тап по предмету показывает попап «Использовать / Выбросить».
+     • Долгое удержание по-прежнему = перетаскивание.
+     • Достижение «Коллекционер» (собрать все 6 типов).
+     • Счётчик предметов за забег (в финале).
+     • Партиклы-вспышка в тон редкости при использовании.
+     • Пасхалка: 5 кликов по монетке «7».
    ============================================================================ */
 (function () {
   'use strict';
@@ -16,6 +17,9 @@
   var DRAG_HOLD_MS  = 380;
   var DROP_GUARD_MS = 3000;
   var SUPPRESS_MS   = 2500;
+  var RUN_GAIN_KEY  = 'lux7_run_gain_v1';
+  var COLLECTOR_KEY = 'lux7_collector_v1';
+  var EASTER_KEY    = 'lux7_easter_v1';
 
   var ITEMS = {
     gem:   { icon:'i-gem',   rarity:'common', name:'Самоцвет',     desc:'+200 фишек сразу' },
@@ -26,6 +30,7 @@
     joker: { icon:'i-joker', rarity:'epic',   name:'Джокер',       desc:'Удваивает баланс (до +3000)' }
   };
   var RARITY_W = { common: 7, rare: 3, epic: 1 };
+  var RARITY_COLOR = { common: '201,183,142', rare: '155,186,245', epic: '242,201,107' };
 
   var inv = [];
   var refundNextLoss = false;
@@ -40,6 +45,10 @@
   var dragStartPos = null;
   var dragReady = false;
   var tipEl = null;
+  var popupEl = null;
+  var popupItem = -1;
+  var easterClicks = 0;
+  var easterTimer = null;
 
   /* ======================= ЧТЕНИЕ S (безопасно) ========================= */
   function getS() {
@@ -69,10 +78,7 @@
   function patchMaxBet() {
     if (typeof window.maxBet !== 'function') return false;
     if (window.__lux7_mbPatched) return true;
-    window.maxBet = function () {
-      var floor = readFloor();
-      return Math.max(200, floor * 200);
-    };
+    window.maxBet = function () { return Math.max(200, readFloor() * 200); };
     window.__lux7_mbPatched = true;
     return true;
   }
@@ -82,21 +88,45 @@
     if (patchMaxBet() || mbTries > 50) clearInterval(mbIv);
   }, 100);
 
-  /* ======================= АВТООЧИСТКА ИНВЕНТАРЯ ======================== */
+  /* ======================= СЧЁТЧИК ПРЕДМЕТОВ ЗА ЗАБЕГ =================== */
+  function getRunGain() {
+    try { return parseInt(localStorage.getItem(RUN_GAIN_KEY) || '0', 10) || 0; } catch (e) { return 0; }
+  }
+  function addRunGain() {
+    try { localStorage.setItem(RUN_GAIN_KEY, String(getRunGain() + 1)); } catch (e) {}
+  }
+  function resetRunGain() {
+    try { localStorage.setItem(RUN_GAIN_KEY, '0'); } catch (e) {}
+  }
+  window.LUX7Items_getRunGain = getRunGain;
+
+  /* ======================= АВТООЧИСТКА / НОВЫЙ ЗАБЕГ ==================== */
   var lastScreen = null;
-  var screenTries = 0;
   setInterval(function () {
     var s = getS();
     var cur = s ? (s.screen || '') : '';
     if (cur === 'class' && lastScreen && lastScreen !== 'class') {
-      // Игрок запустил новый забег
       inv = []; saveInv(); renderGrid(); renderFab();
       refundNextLoss = false;
+      resetRunGain();
     }
     if (cur) lastScreen = cur;
   }, 500);
 
-  /* ======================= УТИЛИТЫ ======================================= */
+  /* ======================= КОЛЛЕКЦИОНЕР ================================= */
+  function checkCollector() {
+    var s = new Set(inv);
+    var all = Object.keys(ITEMS).every(function (id) { return s.has(id); });
+    if (!all) return;
+    try { if (localStorage.getItem(COLLECTOR_KEY) === '1') return; } catch (e) {}
+    try { localStorage.setItem(COLLECTOR_KEY, '1'); } catch (e) {}
+    try { if (typeof unlockAch === 'function') unlockAch('collector'); } catch (e) {}
+    setTimeout(function () {
+      toast('🏅 Коллекционер: все 6 предметов собраны!', 'gold');
+    }, 800);
+  }
+
+  /* ======================= УТИЛИТЫ ====================================== */
   function $(s) { return document.querySelector(s); }
 
   function loadInv() {
@@ -158,7 +188,8 @@
   function addItem(id, silent) {
     if (!ITEMS[id]) return false;
     if (inv.length >= MAX_SLOTS) { if (!silent) toast('Инвентарь полон', 'bad'); return false; }
-    inv.push(id); saveInv(); renderGrid(true); renderFab();
+    inv.push(id); saveInv(); addRunGain(); renderGrid(true); renderFab();
+    checkCollector();
     return true;
   }
   function removeItemAt(i) {
@@ -167,6 +198,17 @@
     saveInv(); renderGrid(); renderFab();
   }
 
+  /* ======================= ПАРТИКЛЫ ОТ ПРЕДМЕТА ======================== */
+  function fireItemFlash(rarity) {
+    var color = RARITY_COLOR[rarity] || RARITY_COLOR.common;
+    var el = document.createElement('div');
+    el.className = 'lux-item-flash';
+    el.style.setProperty('--fc', color);
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 900);
+  }
+
+  /* ======================= ИСПОЛЬЗОВАНИЕ ================================ */
   function useItem(i) {
     var id = inv[i];
     if (!id || !ITEMS[id]) return;
@@ -202,31 +244,29 @@
         refundNextLoss = true; toast('Клевер: следующая потеря вернётся', 'good', it.icon);
         break;
       case 'chest': {
-        // Сундук сам уйдёт, освободив 1 слот. Поэтому новый предмет влезет,
-        // даже если сейчас инвентарь полон: сначала удаляем сундук, потом добавляем.
-        // Убираем сундук заранее.
         inv.splice(i, 1);
         var added = 0;
         for (var k = 0; k < 2; k++) {
           if (inv.length >= MAX_SLOTS) break;
           inv.push(randomItemId());
           added++;
+          addRunGain();
         }
         saveInv();
         suppressUntil = performance.now() + SUPPRESS_MS;
-        if (added === 0) {
-          toast('Нет места под новые предметы', 'bad');
-        } else {
-          toast('Открыто: ' + added + ' предм.', 'gold', it.icon);
-        }
+        if (added === 0) toast('Нет места под новые предметы', 'bad');
+        else toast('Открыто: ' + added + ' предм.', 'gold', it.icon);
         if (isBusy()) refreshChipsLight(); else refreshGameUI(true);
         renderGrid(true); renderFab();
+        checkCollector();
+        fireItemFlash(it.rarity);
         return;
       }
     }
 
     if (consumed) {
       suppressUntil = performance.now() + SUPPRESS_MS;
+      fireItemFlash(it.rarity);
       removeItemAt(i);
       if (isBusy()) refreshChipsLight();
       else refreshGameUI(true);
@@ -236,6 +276,62 @@
     renderFab();
   }
 
+  function dropItem(i) {
+    var id = inv[i];
+    if (!id) return;
+    var it = ITEMS[id];
+    fireItemFlash(it.rarity);
+    removeItemAt(i);
+    toast('Выброшено: ' + it.name, 'bad', it.icon);
+  }
+
+  /* ======================= ПОПАП ДЕЙСТВИЙ ============================== */
+  function showItemPopup(i, slotEl) {
+    hideItemPopup();
+    popupItem = i;
+    var id = inv[i];
+    if (!id) return;
+    var it = ITEMS[id];
+
+    popupEl = document.createElement('div');
+    popupEl.className = 'lux-item-popup ' + it.rarity;
+    popupEl.innerHTML =
+      '<div class="lip-head">' + ico(it.icon, 16) + '<span>' + it.name + '</span></div>' +
+      '<div class="lip-desc">' + it.desc + '</div>' +
+      '<button class="lip-use" type="button">Использовать</button>' +
+      '<button class="lip-drop" type="button">Выбросить</button>';
+    document.body.appendChild(popupEl);
+
+    var r = slotEl.getBoundingClientRect();
+    var pw = 200, ph = 150;
+    var left = r.left - pw - 12;
+    if (left < 8) left = r.right + 12;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    var top = r.top + r.height / 2 - ph / 2;
+    top = Math.max(8, Math.min(window.innerHeight - ph - 8, top));
+    popupEl.style.left = left + 'px';
+    popupEl.style.top = top + 'px';
+
+    popupEl.querySelector('.lip-use').onclick = function (e) {
+      e.stopPropagation();
+      hideItemPopup();
+      useItem(i);
+    };
+    popupEl.querySelector('.lip-drop').onclick = function (e) {
+      e.stopPropagation();
+      hideItemPopup();
+      dropItem(i);
+    };
+  }
+  function hideItemPopup() {
+    if (popupEl) { popupEl.remove(); popupEl = null; }
+    popupItem = -1;
+  }
+  document.addEventListener('click', function (e) {
+    if (popupEl && !popupEl.contains(e.target)) hideItemPopup();
+  }, true);
+
+  /* ======================= WATCHER (дроп / клевер) ====================== */
   function watchChips() {
     var cv = document.getElementById('chipval');
     if (cv) {
@@ -324,7 +420,6 @@
     }
   }
 
-  /* ======================= ОТКРЫТИЕ / ЗАКРЫТИЕ ========================== */
   function openPanel() {
     isOpen = true;
     var panel = document.getElementById('inv-panel');
@@ -335,6 +430,7 @@
   }
   function closePanel() {
     isOpen = false;
+    hideItemPopup();
     var panel = document.getElementById('inv-panel');
     var fab = document.getElementById('inv-fab');
     if (panel) { panel.classList.remove('on'); panel.style.display = 'none'; }
@@ -346,6 +442,7 @@
   function onPointerDown(e) {
     var i = parseInt(e.currentTarget.dataset.i, 10);
     if (isNaN(i) || !inv[i]) return;
+    hideItemPopup();
     dragSrc = i;
     dragStartPos = { x: e.clientX, y: e.clientY };
     dragReady = false;
@@ -391,6 +488,7 @@
       stray[k].classList.remove('drop-target');
     }
     if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+
     if (dragReady && dragSrc >= 0) {
       var el = document.elementFromPoint(e.clientX, e.clientY);
       var tgt = el && el.closest ? el.closest('.inv-slot') : null;
@@ -406,7 +504,8 @@
         }
       }
     } else if (dragSrc >= 0) {
-      useItem(dragSrc);
+      var slotEl = document.querySelector('.inv-slot[data-i="' + dragSrc + '"]');
+      if (slotEl) showItemPopup(dragSrc, slotEl);
     }
     dragSrc = -1;
     dragReady = false;
@@ -423,6 +522,7 @@
     document.body.appendChild(dragGhost);
   }
 
+  /* ======================= TOOLTIP (ПК) ================================= */
   function ensureTip() {
     if (tipEl && document.body.contains(tipEl)) return tipEl;
     tipEl = document.createElement('div');
@@ -432,6 +532,7 @@
   }
   function onHover(e) {
     if (!window.matchMedia('(hover: hover)').matches) return;
+    if (popupEl) return;
     var id = e.currentTarget.dataset.id;
     if (!id || !ITEMS[id]) return;
     var it = ITEMS[id];
@@ -448,6 +549,52 @@
   }
   function onLeave() { if (tipEl) tipEl.classList.remove('on'); }
 
+  /* ======================= ПАСХАЛКА НА МОНЕТКЕ ========================= */
+  function bindEaster() {
+    var coin = document.getElementById('coin');
+    if (!coin || coin.dataset.easter === '1') return;
+    coin.dataset.easter = '1';
+    coin.style.cursor = 'pointer';
+    coin.addEventListener('click', function () {
+      easterClicks++;
+      clearTimeout(easterTimer);
+      easterTimer = setTimeout(function () { easterClicks = 0; }, 2000);
+      if (easterClicks >= 5) {
+        easterClicks = 0;
+        showEasterEgg();
+      }
+    });
+  }
+  function showEasterEgg() {
+    var seen = false;
+    try { seen = localStorage.getItem(EASTER_KEY) === '1'; } catch (e) {}
+    try { localStorage.setItem(EASTER_KEY, '1'); } catch (e) {}
+
+    var modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.onclick = function (e) { if (e.target === modal) modal.remove(); };
+    modal.innerHTML =
+      '<div class="modal-in" style="text-align:center">' +
+        '<h2 style="justify-content:center">' + ico('a-777', 22) + 'Ты нашёл секрет</h2>' +
+        '<p style="font-family:Georgia,serif;font-size:20px;color:var(--gold2);letter-spacing:.1em;margin:20px 0">«' + (seen ? 'Опять ты?' : 'Ты дошёл до конца. За это — 777 фишек счастья.') + '»</p>' +
+        '<p style="font-size:12px;color:var(--mut);line-height:1.6">ЛЮКС-7 умеет считать клики. И запоминает тех, кто любит нажимать всё подряд.</p>' +
+        '<button class="btn sec" style="margin-top:20px" onclick="this.closest(\'.modal\').remove()">Закрыть</button>' +
+      '</div>';
+    document.body.appendChild(modal);
+    // Небольшой бонус за первое открытие
+    if (!seen) {
+      var S = getS();
+      if (S && !S.over) {
+        S.chips += 777;
+        if (S.chips > S.peak) S.peak = S.chips;
+        setTimeout(function () {
+          toast('+777 фишек за находку', 'gold', 'a-777');
+          if (!isBusy()) refreshGameUI(false);
+        }, 400);
+      }
+    }
+  }
+
   /* ======================= CSS =========================================== */
   function injectStyles() {
     if (document.getElementById('items-style')) return;
@@ -462,19 +609,14 @@
       '@media (min-width:900px){#inv-fab{bottom:auto;top:50%;right:20px;transform:translateY(-50%);width:56px;height:56px}#inv-fab:hover{transform:translateY(calc(-50% - 2px)) scale(1.05)}#inv-fab.hidden{transform:translateY(-50%) scale(.6)}}' +
 
       '#inv-panel{' +
-        'position:fixed;' +
-        'top:50%;right:0;' +
-        'width:92px;' +
-        'max-height:80vh;' +
+        'position:fixed;top:50%;right:0;width:92px;max-height:80vh;' +
         'padding:14px 10px 16px;' +
         'background:linear-gradient(180deg,#251b12,#140d08);' +
-        'border:1px solid #4a3b24;border-right:none;' +
-        'border-radius:16px 0 0 16px;' +
+        'border:1px solid #4a3b24;border-right:none;border-radius:16px 0 0 16px;' +
         'box-shadow:-14px 0 32px rgba(0,0,0,.45);' +
         'transform:translate(0,-50%);' +
         'transition:transform .35s cubic-bezier(.2,1,.3,1);' +
-        'overflow-y:auto;overscroll-behavior:contain;' +
-        'z-index:34;' +
+        'overflow-y:auto;overscroll-behavior:contain;z-index:34;' +
       '}' +
       '@media (min-width:900px){#inv-panel{width:112px;padding:16px 12px 18px}}' +
 
@@ -487,7 +629,7 @@
 
       '.inv-grid{display:grid;grid-template-columns:1fr;gap:8px}' +
 
-      '.inv-slot{aspect-ratio:1;width:100%;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,border-color .2s,box-shadow .2s,background .25s}' +
+      '.inv-slot{aspect-ratio:1;width:100%;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,border-color .2s,box-shadow .2s}' +
       '.inv-slot.empty{background:rgba(42,34,22,.35);border-style:dashed;border-color:#382d1c;cursor:default}' +
       '.inv-slot.empty::before{content:"";width:5px;height:5px;border-radius:50%;background:rgba(154,141,118,.3)}' +
       '.inv-slot:not(.empty):active{transform:scale(.92)}' +
@@ -517,6 +659,24 @@
       '#inv-tip .tt-name.epic{color:#f2c96b}' +
       '#inv-tip .tt-desc{color:var(--mut);font-size:11.5px}' +
 
+      '.lux-item-popup{position:fixed;z-index:450;width:200px;padding:12px;background:rgba(20,16,10,.98);border:1px solid #4a3b24;border-radius:12px;box-shadow:0 20px 46px rgba(0,0,0,.85);animation:lipIn .18s cubic-bezier(.2,1,.3,1);display:flex;flex-direction:column;gap:8px}' +
+      '.lux-item-popup.rare{border-color:#3a5c8a;box-shadow:0 20px 46px rgba(0,0,0,.85),0 0 22px rgba(91,141,217,.25)}' +
+      '.lux-item-popup.epic{border-color:#8a6a24;box-shadow:0 20px 46px rgba(0,0,0,.85),0 0 24px rgba(217,164,65,.3)}' +
+      '.lux-item-popup .lip-head{display:flex;align-items:center;gap:7px;font-weight:800;font-size:13px}' +
+      '.lux-item-popup.common .lip-head{color:#c9b78e}' +
+      '.lux-item-popup.rare .lip-head{color:#9bbaf5}' +
+      '.lux-item-popup.epic .lip-head{color:#f2c96b}' +
+      '.lux-item-popup .lip-desc{font-size:11.5px;color:var(--mut);line-height:1.45;margin-bottom:4px}' +
+      '.lux-item-popup button{padding:9px;border-radius:9px;border:1px solid transparent;font-weight:700;font-size:12px;cursor:pointer;transition:.15s;font-family:inherit}' +
+      '.lux-item-popup .lip-use{background:linear-gradient(180deg,#e8bd63,#c9922f);color:#241a06}' +
+      '.lux-item-popup .lip-use:active{transform:scale(.96)}' +
+      '.lux-item-popup .lip-drop{background:transparent;color:#e08a76;border-color:#5c2a22}' +
+      '.lux-item-popup .lip-drop:active{transform:scale(.96);background:rgba(200,80,63,.15)}' +
+      '@keyframes lipIn{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}' +
+
+      '.lux-item-flash{position:fixed;left:50%;top:50%;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:200;transform:translate(-50%,-50%);background:radial-gradient(circle, rgba(var(--fc,217,164,65),.9), transparent 70%);animation:luxFlash .85s cubic-bezier(.2,.9,.3,1)}' +
+      '@keyframes luxFlash{0%{opacity:0;width:8px;height:8px}25%{opacity:1}100%{opacity:0;width:340px;height:340px}}' +
+
       '.inv-slot.flash-new{animation:invDrop .75s cubic-bezier(.34,1.56,.64,1)}' +
       '@keyframes invDrop{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.18) rotate(4deg);opacity:1}100%{transform:none}}' +
       '@keyframes epicShimmer{0%,100%{box-shadow:inset 0 0 12px rgba(217,164,65,.18),0 0 10px rgba(217,164,65,.15)}50%{box-shadow:inset 0 0 16px rgba(217,164,65,.32),0 0 26px rgba(217,164,65,.4)}}';
@@ -529,8 +689,7 @@
 
   function injectSymbols() {
     var sprite = document.querySelector('svg.sprite');
-    if (!sprite) return;
-    if (document.getElementById('i-gem')) return;
+    if (!sprite || document.getElementById('i-gem')) return;
     var defs =
       '<symbol id="i-gem" viewBox="0 0 24 24"><path d="M12 3 L20 9 L12 21 L4 9 Z"/><path d="M12 3 L16 9 L12 21 L8 9 Z" opacity=".5"/><path d="M4 9 L20 9" opacity=".6"/></symbol>' +
       '<symbol id="i-chest" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="11" rx="1.5"/><path d="M3 13 L21 13"/><path d="M3 9 Q3 5 12 5 Q21 5 21 9"/><circle cx="12" cy="15" r="1.2" class="fill-fg"/></symbol>' +
@@ -544,7 +703,6 @@
 
   function injectUI() {
     if (document.getElementById('inv-fab')) return;
-
     var fab = document.createElement('button');
     fab.id = 'inv-fab';
     fab.type = 'button';
@@ -565,9 +723,7 @@
       '<div class="inv-grid" id="inv-grid"></div>';
     document.body.appendChild(panel);
 
-    var closeBtn = panel.querySelector('.inv-close');
-    if (closeBtn) closeBtn.addEventListener('click', closePanel);
-
+    panel.querySelector('.inv-close').addEventListener('click', closePanel);
     renderGrid();
     renderFab();
   }
@@ -578,13 +734,17 @@
     injectSymbols();
     injectUI();
     watchChips();
-    // Первая попытка патча и повтор — на всякий случай
     patchMaxBet();
     setTimeout(patchMaxBet, 500);
     setTimeout(patchMaxBet, 1500);
+    setInterval(bindEaster, 1500);
+    bindEaster();
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && isOpen) closePanel();
+      if (e.key === 'Escape') {
+        if (popupEl) { hideItemPopup(); return; }
+        if (isOpen) closePanel();
+      }
     });
   }
 
@@ -592,13 +752,14 @@
   else boot();
 
   window.LUX7Items = {
-    add:    function (id) { return addItem(id); },
+    add: function (id) { return addItem(id); },
     remove: removeItemAt,
-    list:   function () { return inv.slice(); },
-    clear:  function () { inv = []; saveInv(); renderGrid(); renderFab(); },
-    give:   function (id) { return addItem(id); },
-    open:   openPanel,
-    close:  closePanel,
-    toggle: togglePanel
+    list: function () { return inv.slice(); },
+    clear: function () { inv = []; saveInv(); renderGrid(); renderFab(); },
+    give: function (id) { return addItem(id); },
+    open: openPanel,
+    close: closePanel,
+    toggle: togglePanel,
+    gain: getRunGain
   };
 })();

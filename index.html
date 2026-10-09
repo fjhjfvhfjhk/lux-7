@@ -13,14 +13,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="ambient.css">
 <style>
-#diag{
-  position:fixed;inset:0;z-index:99999;
-  background:#1a0e0c;color:#ff8a7a;
-  padding:22px 18px calc(env(safe-area-inset-bottom,0px) + 22px);
-  font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;
-  overflow:auto;white-space:pre-wrap;display:none;
-  border:2px solid #5c2a22;
-}
+#diag{position:fixed;inset:0;z-index:99999;background:#1a0e0c;color:#ff8a7a;padding:22px 18px calc(env(safe-area-inset-bottom,0px) + 22px);font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;overflow:auto;white-space:pre-wrap;display:none;border:2px solid #5c2a22}
 #diag.on{display:block}
 #diag h1{font:700 15px/1.4 Georgia,serif;color:#f2c96b;margin:0 0 12px;letter-spacing:.1em}
 #diag code{background:#2a1411;padding:2px 6px;border-radius:4px;color:#f2c96b}
@@ -30,7 +23,6 @@
 
 <div id="ambient" aria-hidden="true"></div>
 
-<!-- SVG ICON SPRITE -->
 <svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
   <symbol id="g-bj" viewBox="0 0 24 24"><path d="M7.5 3 L14 4.5 L11.5 17.5 L5 16 Z"/><path d="M10.5 4.5 L17 6 L14.5 19 L8 17.5" opacity=".5"/><circle cx="9.5" cy="10" r="1.7" class="fill-fg"/></symbol>
   <symbol id="g-roulette" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4" class="fill-fg"/><path d="M12 3 L12 6 M18.4 5.6 L16.2 7.8 M21 12 L18 12 M18.4 18.4 L16.2 16.2 M12 21 L12 18 M5.6 18.4 L7.8 16.2 M3 12 L6 12 M5.6 5.6 L7.8 7.8" stroke-width="1.4"/></symbol>
@@ -105,14 +97,6 @@
     if (!el.classList.contains('on')) showDiag('<h1>Ошибка в JS</h1>' + msg);
     else el.textContent += '\n[ERR] ' + msg;
   }, true);
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      if (diagShown) return;
-      var app = document.getElementById('app');
-      if (!app || app.innerHTML.trim().length > 0) return;
-      showDiag('<h1>ЛЮКС-7 · диагностика</h1>UI не отрисован.');
-    }, 3000);
-  });
 })();
 </script>
 <script src="app.js"></script>
@@ -120,5 +104,6 @@
 <script src="items.js"></script>
 <script src="roulette-fx.js"></script>
 <script src="games-fx.js"></script>
+<script src="extras.js"></script>
 </body>
 </html>
