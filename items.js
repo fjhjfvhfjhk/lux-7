@@ -1,14 +1,16 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v2.9)
-   Исправление: панель гарантированно узкая (!important), скрыта полностью
-   когда закрыта. Понижен порог дропа. Больше шансов.
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.0)
+   v3.0:
+     • Фикс сундука: учитываем, что сам сундук освободит слот.
+     • Открывает 2 предмета, если есть место, иначе сколько влезет.
+     • Не ругается «Инвентарь полон», если после удаления сундука место есть.
    ============================================================================ */
 (function () {
   'use strict';
 
   var STORE_KEY     = 'lux7_items_v1';
   var MAX_SLOTS     = 5;
-  var DROP_MIN      = 100;    // было 150
+  var DROP_MIN      = 100;
   var DRAG_HOLD_MS  = 380;
   var DROP_GUARD_MS = 3000;
   var SUPPRESS_MS   = 2500;
@@ -62,13 +64,13 @@
     setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 300); }, 1700);
   }
   function getS() {
-    if (typeof window.S !== 'undefined' && window.S) return window.S;
     try { if (typeof S !== 'undefined' && S) return S; } catch (e) {}
+    if (typeof window.S !== 'undefined' && window.S) return window.S;
     return null;
   }
   function isBusy() {
-    if (typeof window.busy !== 'undefined' && window.busy) return true;
     try { if (typeof busy !== 'undefined' && busy) return true; } catch (e) {}
+    if (typeof window.busy !== 'undefined' && window.busy) return true;
     return false;
   }
   function refreshChipsLight() {
@@ -128,8 +130,14 @@
 
     var consumed = true;
     switch (id) {
-      case 'gem':  S.chips += 200; if (S.chips > S.peak) S.peak = S.chips; toast('+200 фишек', 'good', it.icon); break;
-      case 'ace':  S.chips += 500; if (S.chips > S.peak) S.peak = S.chips; toast('+500 фишек!', 'gold', it.icon); break;
+      case 'gem':
+        S.chips += 200; if (S.chips > S.peak) S.peak = S.chips;
+        toast('+200 фишек', 'good', it.icon);
+        break;
+      case 'ace':
+        S.chips += 500; if (S.chips > S.peak) S.peak = S.chips;
+        toast('+500 фишек!', 'gold', it.icon);
+        break;
       case 'joker': {
         var gain = Math.min(3000, S.chips);
         if (gain <= 0) { toast('Нечего удваивать', 'bad'); consumed = false; break; }
@@ -139,18 +147,51 @@
       }
       case 'ward':
         if (!S.curse) { toast('Нет проклятия', 'bad'); consumed = false; break; }
-        S.curse = null; toast('Проклятие снято', 'good', it.icon); break;
+        S.curse = null; toast('Проклятие снято', 'good', it.icon);
+        break;
       case 'lucky':
         if (refundNextLoss) { toast('Уже активно', 'bad'); consumed = false; break; }
-        refundNextLoss = true; toast('Клевер: следующая потеря вернётся', 'good', it.icon); break;
+        refundNextLoss = true; toast('Клевер: следующая потеря вернётся', 'good', it.icon);
+        break;
       case 'chest': {
+        // Сундук сам уйдёт из инвентаря, освободив 1 слот.
+        // Значит, если сейчас инвентарь полон (5/5), после открытия будет 4/5 — влезет 1 предмет.
+        // Если 4/5 — будет 3/5 — влезет 2.
+        if (inv.length >= MAX_SLOTS) {
+          toast('Нужно освободить 1 слот', 'bad');
+          consumed = false;
+          break;
+        }
+        var slotsAfterRemove = MAX_SLOTS - (inv.length - 1); // -1 = сам сундук освободит
+        var want = Math.min(2, slotsAfterRemove);
         var opened = 0;
-        for (var k = 0; k < 2; k++) {
+        for (var k = 0; k < want; k++) {
+          // Позволяем массиву временно дойти до MAX_SLOTS; removeItemAt уменьшит на 1.
           if (inv.length >= MAX_SLOTS) break;
-          inv.push(randomItemId()); opened++;
+          inv.push(randomItemId());
+          opened++;
+        }
+        // Если из-за разницы (сундук + добавления) длина превысила MAX — сразу подрежем
+        if (inv.length > MAX_SLOTS) {
+          inv.splice(i, 1); // удалим сундук заранее
+          // Дошли до конца — removeItemAt(i) будет повторно вызван ниже, но там i уже не сундук.
+          // Проще: удаляем сундук тут и ставим consumed = false, чтобы не удалять ниже.
+          saveInv();
+          if (opened === 0) {
+            toast('Нет места', 'bad');
+          } else {
+            toast('Открыто: ' + opened + ' предм.', 'gold', it.icon);
+          }
+          if (isBusy()) refreshChipsLight(); else refreshGameUI(true);
+          renderGrid(true); renderFab();
+          return;
         }
         saveInv();
-        if (opened === 0) { toast('Инвентарь полон', 'bad'); consumed = false; break; }
+        if (opened === 0) {
+          toast('Нет места', 'bad');
+          consumed = false;
+          break;
+        }
         toast('Открыто: ' + opened + ' предм.', 'gold', it.icon);
         break;
       }
@@ -187,7 +228,6 @@
         }
 
         if (inGame && delta >= DROP_MIN && performance.now() > dropGuardUntil && performance.now() > suppressUntil) {
-          // Увеличено: 100-499 → 30%, 500-1999 → 50%, 2000+ → 70%
           var chance = delta >= 2000 ? 0.70 : (delta >= 500 ? 0.50 : 0.30);
           if (Math.random() < chance) {
             dropGuardUntil = performance.now() + DROP_GUARD_MS;
@@ -380,12 +420,10 @@
   }
   function onLeave() { if (tipEl) tipEl.classList.remove('on'); }
 
-  /* ======================= CSS =========================================== */
   function injectStyles() {
     if (document.getElementById('items-style')) return;
     var css =
 
-      /* FAB */
       '#inv-fab{position:fixed;z-index:32;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:14px;width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,#f7dc85,#c9922f);border:none;cursor:pointer;display:grid;place-items:center;color:#241a06;box-shadow:0 12px 26px rgba(0,0,0,.55);transition:transform .25s,opacity .25s}' +
       '#inv-fab:hover{transform:translateY(-2px) scale(1.04)}' +
       '#inv-fab:active{transform:scale(.94)}' +
@@ -394,7 +432,6 @@
       '#inv-fab.hidden{opacity:0;pointer-events:none;transform:scale(.6)}' +
       '@media (min-width:900px){#inv-fab{bottom:auto;top:50%;right:20px;transform:translateY(-50%);width:56px;height:56px}#inv-fab:hover{transform:translateY(calc(-50% - 2px)) scale(1.05)}#inv-fab.hidden{transform:translateY(-50%) scale(.6)}}' +
 
-      /* Панель — жёсткая узкая, скрыта когда закрыта */
       '#inv-panel{' +
         'position:fixed !important;' +
         'top:50% !important;right:0 !important;' +

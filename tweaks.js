@@ -1,33 +1,62 @@
 /* ============================================================================
-   ЛЮКС-7 · TWEAKS.JS (v2) — минимальный и безопасный.
-   Только поднимает потолок ставки: этаж × 200.
-   Ничего больше не трогает, никаких newRun / setInterval / eval.
+   ЛЮКС-7 · TWEAKS.JS (v3) — минимальный и безопасный.
+   Две задачи:
+     1) maxBet: этаж × 200 (чтобы «Кит» была достижима).
+     2) Очистка инвентаря при старте нового забега.
+   Все обращения к S — в try/catch, чтобы не сломать сайт, если S ещё нет.
    ============================================================================ */
 (function () {
   'use strict';
 
-  /* Патч maxBet. Читаем S напрямую — app.js объявляет его через `let`,
-     поэтому window.S не подходит, а lexical S доступен. */
-  function patchMaxBet() {
-    if (typeof window.maxBet !== 'function') return false;
-    if (window.__lux7_mbPatched) return true;
-    window.__lux7_mbPatched = true;
-
-    window.maxBet = function () {
-      var s = null;
-      try { s = S; } catch (e) { s = null; }
-      if (!s) return 200;
-      var floor = s.floor || 1;
-      return Math.max(200, floor * 200);
-    };
-    return true;
+  /* -------------------- Чтение номера этажа ----------------------------- */
+  function readFloor() {
+    // 1. Пробуем S напрямую (lexical scope app.js)
+    try {
+      if (typeof S !== 'undefined' && S && typeof S.floor === 'number') return S.floor;
+    } catch (e) {}
+    // 2. Fallback — из заголовка «Этаж N / 10»
+    try {
+      var el = document.querySelector('.hdr-title small');
+      if (el) {
+        var m = String(el.textContent).match(/Этаж\s+(\d+)/i);
+        if (m) return parseInt(m[1], 10) || 1;
+      }
+    } catch (e) {}
+    return 1;
   }
 
+  /* -------------------- 1. Патч maxBet ---------------------------------- */
   var tries = 0;
   var iv = setInterval(function () {
     tries++;
-    if (patchMaxBet() || tries > 40) clearInterval(iv);
+    if (typeof window.maxBet === 'function' && !window.__lux7_mbPatched) {
+      window.maxBet = function () {
+        return Math.max(200, readFloor() * 200);
+      };
+      window.__lux7_mbPatched = true;
+    }
+    if (window.__lux7_mbPatched || tries > 60) clearInterval(iv);
   }, 100);
 
-  window.__tweaksLoaded = true;
+  /* -------------------- 2. Очистка инвентаря на новом забеге ------------ */
+  var wasInGame = false;
+  setInterval(function () {
+    var scr = '';
+    try {
+      if (typeof S !== 'undefined' && S && S.screen) scr = S.screen;
+    } catch (e) {}
+    if (scr === 'class') {
+      if (wasInGame) {
+        try {
+          if (window.LUX7Items && typeof window.LUX7Items.clear === 'function') {
+            window.LUX7Items.clear();
+          }
+        } catch (e) {}
+        wasInGame = false;
+      }
+    } else if (scr) {
+      wasInGame = true;
+    }
+  }, 500);
+
 })();
