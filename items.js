@@ -1,13 +1,14 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v2.8)
-   Узкая вертикальная панелька ~96px, 5 слотов, без затемнения фона.
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v2.9)
+   Исправление: панель гарантированно узкая (!important), скрыта полностью
+   когда закрыта. Понижен порог дропа. Больше шансов.
    ============================================================================ */
 (function () {
   'use strict';
 
   var STORE_KEY     = 'lux7_items_v1';
   var MAX_SLOTS     = 5;
-  var DROP_MIN      = 150;
+  var DROP_MIN      = 100;    // было 150
   var DRAG_HOLD_MS  = 380;
   var DROP_GUARD_MS = 3000;
   var SUPPRESS_MS   = 2500;
@@ -186,7 +187,8 @@
         }
 
         if (inGame && delta >= DROP_MIN && performance.now() > dropGuardUntil && performance.now() > suppressUntil) {
-          var chance = delta >= 2000 ? 0.60 : (delta >= 500 ? 0.40 : 0.22);
+          // Увеличено: 100-499 → 30%, 500-1999 → 50%, 2000+ → 70%
+          var chance = delta >= 2000 ? 0.70 : (delta >= 500 ? 0.50 : 0.30);
           if (Math.random() < chance) {
             dropGuardUntil = performance.now() + DROP_GUARD_MS;
             var rid = randomItemId();
@@ -378,6 +380,7 @@
   }
   function onLeave() { if (tipEl) tipEl.classList.remove('on'); }
 
+  /* ======================= CSS =========================================== */
   function injectStyles() {
     if (document.getElementById('items-style')) return;
     var css =
@@ -391,20 +394,28 @@
       '#inv-fab.hidden{opacity:0;pointer-events:none;transform:scale(.6)}' +
       '@media (min-width:900px){#inv-fab{bottom:auto;top:50%;right:20px;transform:translateY(-50%);width:56px;height:56px}#inv-fab:hover{transform:translateY(calc(-50% - 2px)) scale(1.05)}#inv-fab.hidden{transform:translateY(-50%) scale(.6)}}' +
 
-      /* Панель — узкая, справа, без затемнения */
-      '#inv-panel{position:fixed;top:50%;right:0;z-index:34;' +
-        'width:92px;' +
-        'padding:14px 10px 16px;' +
+      /* Панель — жёсткая узкая, скрыта когда закрыта */
+      '#inv-panel{' +
+        'position:fixed !important;' +
+        'top:50% !important;right:0 !important;' +
+        'width:92px !important;max-width:92px !important;' +
+        'height:auto !important;max-height:80vh !important;' +
+        'padding:14px 10px 16px !important;' +
         'background:linear-gradient(180deg,#251b12,#140d08);' +
         'border:1px solid #4a3b24;border-right:none;' +
         'border-radius:16px 0 0 16px;' +
         'box-shadow:-14px 0 32px rgba(0,0,0,.45), inset 1px 0 0 rgba(242,201,107,.05);' +
-        'transform:translate(105%,-50%);' +
-        'transition:transform .38s cubic-bezier(.2,1,.3,1);' +
-        'pointer-events:none}' +
-      '#inv-panel.on{transform:translate(0,-50%);pointer-events:auto}' +
+        'transform:translate(105%,-50%) !important;' +
+        'transition:transform .38s cubic-bezier(.2,1,.3,1),visibility .38s,opacity .2s;' +
+        'visibility:hidden;opacity:0;' +
+        'overflow-y:auto;overscroll-behavior:contain;' +
+        'z-index:34;flex:none;' +
+      '}' +
+      '#inv-panel.on{transform:translate(0,-50%) !important;visibility:visible;opacity:1}' +
 
-      '@media (min-width:900px){#inv-panel{width:112px;padding:16px 12px 18px;border-radius:18px 0 0 18px}}' +
+      '@media (min-width:900px){' +
+        '#inv-panel{width:112px !important;max-width:112px !important;padding:16px 12px 18px !important;border-radius:18px 0 0 18px}' +
+      '}' +
 
       '.inv-panel-head{display:flex;align-items:center;justify-content:center;gap:5px;position:relative;margin-bottom:12px;padding-right:14px}' +
       '.inv-panel-head .inv-ico{width:22px;height:22px;color:#f2c96b;display:grid;place-items:center}' +
@@ -413,8 +424,7 @@
       '.inv-panel-head .inv-close{position:absolute;top:-4px;right:-2px;width:22px;height:22px;border-radius:7px;border:1px solid #4a3b24;background:#1e1610;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;padding:0;transition:.15s}' +
       '.inv-panel-head .inv-close:active{transform:scale(.9);color:#f2c96b;border-color:#8a6a24}' +
 
-      /* Сетка — вертикальная колонка */
-      '.inv-grid{display:grid;grid-template-columns:1fr;gap:8px}' +
+      '.inv-grid{display:grid !important;grid-template-columns:1fr !important;gap:8px !important}' +
 
       '.inv-slot{aspect-ratio:1;width:100%;border-radius:12px;background:linear-gradient(180deg,#2a1f15,#1a120c);border:1.5px solid #4a3b24;display:grid;place-items:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,border-color .2s,box-shadow .2s,background .25s}' +
       '.inv-slot.empty{background:rgba(42,34,22,.35);border-style:dashed;border-color:#382d1c;cursor:default}' +
