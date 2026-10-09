@@ -1,8 +1,8 @@
 /* ============================================================================
-   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.5)
-   Фикс v3.4:
-     • Попап скрывался тем же кликом, который его открывал.
-       Теперь закрытие через pointerdown вне попапа/слота.
+   ЛЮКС-7 · ITEMS.JS — инвентарь (v3.6)
+   Фикс: sanitizePerks — удаляет из S.perks идентификаторы, которых нет
+   в PERKS. Это предотвращает падение app.js при рендере хаба,
+   если в сохранённом забеге остался устаревший перк (например, backpack).
    ============================================================================ */
 (function () {
   'use strict';
@@ -80,6 +80,7 @@
     return hasPerk('backpack') ? MAX_SLOTS_CAP : BASE_SLOTS;
   }
 
+  /* ======================= РЕГИСТРАЦИЯ ПЕРКА =========================== */
   function registerBackpackPerk() {
     try {
       if (typeof PERKS === 'undefined' || !Array.isArray(PERKS)) return false;
@@ -88,12 +89,45 @@
       return true;
     } catch (e) { return false; }
   }
+
+  /* ======================= SANITIZE PERKS ================================ */
+  /* Удаляет из S.perks любые id, которых нет в PERKS. Это критично:
+     если в забеге остался устаревший перк, app.js падает при рендере. */
+  function sanitizePerks() {
+    var s = getS();
+    if (!s || !Array.isArray(s.perks)) return;
+    var perms = null;
+    try {
+      if (typeof PERKS !== 'undefined' && Array.isArray(PERKS)) perms = PERKS;
+    } catch (e) {}
+    if (!perms) return;
+
+    var changed = false;
+    var filtered = s.perks.filter(function (id) {
+      var found = perms.some(function (p) { return p && p.id === id; });
+      if (!found) changed = true;
+      return found;
+    });
+
+    if (changed) {
+      s.perks = filtered;
+      try { if (typeof saveRun === 'function') saveRun(); } catch (e) {}
+      try { if (typeof window.render === 'function') window.render(); } catch (e) {}
+    }
+  }
+
   var pkTries = 0;
   var pkIv = setInterval(function () {
     pkTries++;
-    if (registerBackpackPerk() || pkTries > 40) clearInterval(pkIv);
+    var ok = registerBackpackPerk();
+    if (ok) {
+      sanitizePerks();
+      if (pkTries > 5) clearInterval(pkIv);
+    }
+    if (pkTries > 60) clearInterval(pkIv);
   }, 100);
 
+  /* ======================= ПАТЧ maxBet ================================== */
   function patchMaxBet() {
     if (typeof window.maxBet !== 'function') return false;
     if (window.__lux7_mbPatched) return true;
@@ -107,6 +141,7 @@
     if (patchMaxBet() || mbTries > 50) clearInterval(mbIv);
   }, 100);
 
+  /* ======================= СЧЁТЧИК ЗА ЗАБЕГ ============================= */
   function getRunGain() {
     try { return parseInt(localStorage.getItem(RUN_GAIN_KEY) || '0', 10) || 0; } catch (e) { return 0; }
   }
@@ -148,6 +183,7 @@
     }
   }
 
+  /* ======================= КОЛЛЕКЦИОНЕР ================================ */
   function markUsed(id) {
     if (!ITEMS[id]) return;
     if (usedTypes[id]) return;
@@ -369,8 +405,6 @@
     if (popupEl) { popupEl.remove(); popupEl = null; }
   }
 
-  /* Закрытие попапа: pointerdown ВНЕ попапа и ВНЕ слота.
-     Так клик по слоту не «съедает» только что открытый попап. */
   document.addEventListener('pointerdown', function (e) {
     if (!popupEl) return;
     if (performance.now() - popupOpenedAt < 120) return;
@@ -756,7 +790,9 @@
     setTimeout(patchMaxBet, 500);
     setTimeout(patchMaxBet, 1500);
     registerBackpackPerk();
-    setTimeout(registerBackpackPerk, 800);
+    sanitizePerks();
+    setTimeout(sanitizePerks, 500);
+    setTimeout(sanitizePerks, 1500);
     setInterval(bindEaster, 1500);
     bindEaster();
 
@@ -781,6 +817,7 @@
     close: closePanel,
     toggle: togglePanel,
     gain: getRunGain,
-    slotsMax: slotsMax
+    slotsMax: slotsMax,
+    sanitizePerks: sanitizePerks
   };
 })();
