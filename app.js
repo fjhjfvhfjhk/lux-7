@@ -710,6 +710,7 @@ function hubScreen() {
     ? `<div class="sect" style="padding:0">Ваши перки (${S.perks.length})</div>
        <div class="perk-list" style="padding:0">${S.perks.map(id => {
           const p = PERKS.find(x => x.id === id);
+          if (!p) return '';
           return `<div class="pchip">${ico(p.icon, 13)}<span>${p.name}</span></div>`;
        }).join('')}</div>` : '';
   const mb = minBetNow();
